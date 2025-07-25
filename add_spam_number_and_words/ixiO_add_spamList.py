@@ -50,22 +50,37 @@ def add_spam_number():
         # 3. 1부터 600까지 반복
         for i in range(601):
 
-            # 세 자리 숫자로 입력
-            padded_number = f"{i:03}" 
+            try:
 
-            # 4. 꼭 받아야 할 전화번호를 입력하세요 텍스트 필드 선택
-            input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().className("android.widget.EditText").instance(0)')
-            input_field.click()
+                # 세 자리 숫자로 입력
+                padded_number = f"{i:03}" 
 
-            # 5. 숫자 입력
-            input_field.send_keys(str(padded_number))
+                # 4. 꼭 받아야 할 전화번호를 입력하세요 텍스트 필드 선택
+                input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().className("android.widget.EditText").instance(0)')
+                input_field.click()
 
-            # 6. 등록버튼 선택
-            btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("등록")')
-            btn_register.click()
+                # 5. 숫자 입력
+                input_field.send_keys(str(padded_number))
 
-            print(f"🕹️  스팸번호 {i} 등록 완료")
-            time.sleep(0.5)
+                # 6. 등록버튼 선택
+                btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("등록")')
+                btn_register.click()
+
+                print(f"🕹️  스팸번호 {i} 등록 완료")
+                time.sleep(0.5)
+
+                # 추가 동작
+                # 번호 리스트 뷰에 해당 번호가 추가되었는 지 확인
+                # last_items = driver.find_elements(By.ID, "com.example:id/list_item_text")
+
+#                if not last_items or padded_number != last_items[-1].text:
+ #                   raise Exception(f"❌ 번호 {padded_number}가 리스트에 제대로 추가되지 않았습니다.")
+
+            # 에러케이스 추가
+            except Exception as e:
+                print(f"🚨 에러 발생! 현재 번호: {padded_number}")
+                print(f"에러 메시지: {e}")
+                break  # 반복 중단
 
         # 추가 동작
         # 005 이후부터 등록 후 리스트 뷰 최상단으로 스크롤

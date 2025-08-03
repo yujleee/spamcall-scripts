@@ -1,3 +1,4 @@
+import platform
 import time
 import sys
 import os
@@ -9,6 +10,7 @@ from appium import webdriver
 from appium.webdriver.common.appiumby import AppiumBy
 from appium.options.android import UiAutomator2Options
 from utils.util import find
+from datetime import datetime
 
 # ======================================================
 # 익시오 차단 예외 번호 최대 갯수 확인 스크립트
@@ -46,11 +48,12 @@ def add_spam_number():
 
         # menu_spam_exception = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("차단 예외 번호")')
         # menu_spam_exception.click()
+        
+        start_time = datetime.now()
+        print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # 3. 1부터 600까지 반복
-        for i in range(601):
-
-            try:
+        for i in range(598,601):
 
                 # 세 자리 숫자로 입력
                 padded_number = f"{i:03}" 
@@ -61,33 +64,48 @@ def add_spam_number():
 
                 # 5. 숫자 입력
                 input_field.send_keys(str(padded_number))
+                
+                # mac OS일 경우 키패드 내리기
+                if platform.system() == 'Darwin':
+                    driver.hide_keyboard()
 
                 # 6. 등록버튼 선택
                 btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("등록")')
                 btn_register.click()
+                
+                if i >= 600:
+                    try:
+                        popup = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("더 이상 추가할 수 없어요")')
+                        print("✅ 팝업 노출 확인:", popup.text)            
+                    
+                        btn_popupClose = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("확인")')
+                        btn_popupClose.click()
 
-                print(f"🕹️  스팸번호 {i} 등록 완료")
+                        print("✅ 팝업 닫기 완료! 스크립트 실행 끝!")
+                        break
+
+                    except Exception as e:
+                        print(f"❌ 팝업 미노출 또는 닫기 실패: {e}")
+                        break 
+                
+                try:
+                    xpath = f'//android.widget.TextView[@text="{padded_number}"]'
+                    find(driver, AppiumBy.XPATH, xpath, timeout=5)
+                
+                except Exception:
+                    print(f"🕹️ ❗️ {padded_number} 등록 실패 또는 시간 초과")
+                    break
+
+    
+                print(f"  스팸번호 {i} 등록 완료")
                 time.sleep(0.5)
 
-                # 추가 동작
-                # 번호 리스트 뷰에 해당 번호가 추가되었는 지 확인
-                # last_items = driver.find_elements(By.ID, "com.example:id/list_item_text")
-
-#                if not last_items or padded_number != last_items[-1].text:
- #                   raise Exception(f"❌ 번호 {padded_number}가 리스트에 제대로 추가되지 않았습니다.")
-
-            # 에러케이스 추가
-            except Exception as e:
-                print(f"🚨 에러 발생! 현재 번호: {padded_number}")
-                print(f"에러 메시지: {e}")
-                break  # 반복 중단
-
-        # 추가 동작
-        # 005 이후부터 등록 후 리스트 뷰 최상단으로 스크롤
-
-
-
-        # 7. 더이상 추가가 불가능하다는 팝업 노출 확인 후 종료 
+            
+        
+        # 종료 시각 및 소요 시간 기록
+        end_time = datetime.now()
+        print(f"🔥 스크립트 종료: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"🔥 총 소요 시간: {end_time - start_time}")
 
     finally:
         driver.quit()

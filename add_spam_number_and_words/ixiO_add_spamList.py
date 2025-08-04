@@ -16,7 +16,7 @@ from datetime import datetime
 # 익시오 차단 예외 번호 최대 갯수 확인 스크립트
 # ======================================================
 # - ✨ 실행 전 확인 사항
-# - 익시오 앱 진입 후 실행
+# - 익시오 앱 진입 > 스팸 차단 번호 추가 화면까지 진입한 상태에서 실행
 
 
 def add_spam_number():
@@ -37,17 +37,6 @@ def add_spam_number():
     driver = webdriver.Remote("http://localhost:4723", options=options)
 
     try:
-
-        # # 1. 설정 탭으로 이동
-        # btn_setting = find(driver, AppiumBy.ACCESSIBILITY_ID, "설정")
-        # btn_setting.click()
-
-        # # 2. 스팸 알림 및 수신 차단 탭 이동 > 차단 예외 번호 탭 이동
-        # menu_spam_noti = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("스팸 알림 및 수신 차단")')
-        # menu_spam_noti.click()
-
-        # menu_spam_exception = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("차단 예외 번호")')
-        # menu_spam_exception.click()
         
         start_time = datetime.now()
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")

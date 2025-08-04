@@ -4,6 +4,8 @@
 **최대 등록 한도 팝업 확인을 위해 수동 입력 과정 생략**을 목적으로 만들어졌습니다.
 
 > ⚠️ 현재 **Windows OS** 환경에서 모든 스크립트 실행 가능합니다.
+<br>
+<br>
 > ⚠️ **Mac OS**는 익시오 스팸 번호 차단/등록만 현재 가능합니다. (나머지 스크립트 실행 확인 후 보완 예정)
 
 ---
@@ -45,7 +47,7 @@
 
 터미널(cmd) 창을 관리자 모드로 열고 아래 명령어 실행:
 
-`bash npm install -g appium`
+`npm install -g appium`
 
 Appium 설치 이전, 아래 프로그램들이 설치되어 있어야 합니다.
 설치와 관련해서는 구글 참조 바랍니다.
@@ -57,11 +59,11 @@ Appium 설치 이전, 아래 프로그램들이 설치되어 있어야 합니다
 터미널을 연 후 아래 명령어 실행:
 appium-doctor 는 현재 환경이 Appium을 실행하기에 적합한지 체크 후 보여주는 패키지입니다.
 
-`bash npm install appium-doctor`
+`npm install appium-doctor`
 
 appium-doctor 설치 후 아래 명령어를 실행하면 환경 설정이 제대로 되었는지 확인 가능합니다.
 
-`bash appium-doctor`
+`appium-doctor`
 
 만약 명령어 실행 시 ❌ 마크가 뜨는 행이 있다면 그 행과 관련된 문제를 해결해준 후 재실행하면 됩니다.
 
@@ -99,7 +101,7 @@ GitHub Repository에서 Code > Download Zip 클릭하여 다운로드
 
 VSCode를 열고, Ctrl + ~ 로 터미널을 열어 아래 명령어 입력:
 
-`bash pip install -r requirements.txt`
+`pip install -r requirements.txt`
 
 <br>
 <br>
@@ -114,7 +116,7 @@ VSCode를 열고, Ctrl + ~ 로 터미널을 열어 아래 명령어 입력:
 
 터미널에서 다음 명령어 입력:
 
-`bash adb devices`
+`adb devices`
 입력 후 나오는 단말기 ID 값을 기억해두세요. (예: R3CX20TEEMV)
 
 <br>
@@ -141,7 +143,7 @@ add_spam_number() 함수 안의 caps 값 중 아래 부분 수정:
 (win) 관리자 권한으로 cmd 실행
 (mac) 터미널 실행 후:
 
-`bash appium`
+`appium`
 "Appium REST http interface listener started..." 메시지가 뜨면 성공
 
 ### 10. VSCode에서 스크립트 실행
@@ -156,7 +158,7 @@ add_spam_number() 함수 안의 caps 값 중 아래 부분 수정:
 | 스팸전화알림             | spamcallnoti_add_spam_number.py  |
 
 -   (win) 우측 상단의 ▶️ (Run Python File) 버튼 클릭
--   (mac) vscode 내 터미널에서 `bash python3 ./add_spam_number_and_words/파일명.py` 입력
+-   (mac) vscode 내 터미널에서 `python3 ./add_spam_number_and_words/파일명.py` 입력
 
 <br>
 <br>

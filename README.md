@@ -3,7 +3,8 @@
 본 스크립트는 Android 단말에서, 스팸 전화번호 및 차단 단어를 자동으로 추가하는 테스트 자동화 도구입니다.  
 **최대 등록 한도 팝업 확인을 위해 수동 입력 과정 생략**을 목적으로 만들어졌습니다.
 
-> ⚠️ 현재는 **Windows OS** 환경에서만 실행 가능합니다. (Mac 지원은 추후 추가 예정)
+> ⚠️ 현재 **Windows OS** 환경에서 모든 스크립트 실행 가능합니다.
+> ⚠️ **Mac OS**는 익시오 스팸 번호 차단/등록만 현재 가능합니다. (나머지 스크립트 실행 확인 후 보완 예정)
 
 ---
 
@@ -37,15 +38,32 @@
 ### 1. Python 설치
 
 -   https://www.python.org/downloads/
+-   버전 3.10 이상
 -   설치 시, **"Add Python to PATH" 체크 필수**
 
 ### 2. Appium 설치
 
-터미널(cmd) 창을 열고 아래 명령어 실행:
+터미널(cmd) 창을 관리자 모드로 열고 아래 명령어 실행:
 
 `bash npm install -g appium`
 
-Appium 설치 이전, Node.js가 설치되어 있어야 합니다. (https://nodejs.org/)
+Appium 설치 이전, 아래 프로그램들이 설치되어 있어야 합니다.
+설치와 관련해서는 구글 참조 바랍니다.
+
+-   JDK
+-   Android Studio 설치 및 환경변수 설정 (JAVA_HOME, ANDROID_HOME)
+-   Node.js (https://nodejs.org/)
+
+터미널을 연 후 아래 명령어 실행:
+appium-doctor 는 현재 환경이 Appium을 실행하기에 적합한지 체크 후 보여주는 패키지입니다.
+
+`bash npm install appium-doctor`
+
+appium-doctor 설치 후 아래 명령어를 실행하면 환경 설정이 제대로 되었는지 확인 가능합니다.
+
+`bash appium-doctor`
+
+만약 명령어 실행 시 ❌ 마크가 뜨는 행이 있다면 그 행과 관련된 문제를 해결해준 후 재실행하면 됩니다.
 
 ### 3. VSCode 설치
 
@@ -56,6 +74,14 @@ https://code.visualstudio.com/
 -   Python
 
 -   Python Environment
+
+mac의 경우 파이썬 인터프리터를 지정해주어야 합니다.
+
+cmd + shift + p > pyhton interpreter 선택 하면 어떤 파이썬 버전으로 실행할 것인지 지정이 가능합니다.
+아래 경로를 참고하여 3.10 버전 이상의 경로를 지정해 줍니다.
+
+`/usr/local/bin/python3` (인텔 mac)  
+`/opt/homebrew/bin/python3` (M1 이상 mac)
 
 <br>
 <br>
@@ -112,7 +138,8 @@ add_spam_number() 함수 안의 caps 값 중 아래 부분 수정:
 
 ### 9. Appium 서버 실행
 
-관리자 권한으로 cmd 실행 후:
+(win) 관리자 권한으로 cmd 실행
+(mac) 터미널 실행 후:
 
 `bash appium`
 "Appium REST http interface listener started..." 메시지가 뜨면 성공
@@ -128,7 +155,8 @@ add_spam_number() 함수 안의 caps 값 중 아래 부분 수정:
 | 모바일매니저 > 스팸 단어 | mobileManager_add_spam_words.py  |
 | 스팸전화알림             | spamcallnoti_add_spam_number.py  |
 
--   우측 상단의 ▶️ (Run Python File) 버튼 클릭
+-   (win) 우측 상단의 ▶️ (Run Python File) 버튼 클릭
+-   (mac) vscode 내 터미널에서 `bash python3 ./add_spam_number_and_words/파일명.py` 입력
 
 <br>
 <br>

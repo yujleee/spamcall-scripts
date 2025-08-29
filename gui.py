@@ -1,7 +1,18 @@
 import os
+import platform
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, messagebox, scrolledtext, font
 from runner import get_available_scripts, check_adb_connection, execute_script
+
+OS_FONTS = {
+    'Darwin': ('AppleSDGothicNeo', 12),      
+    'Windows': ('맑은 고딕', 10),    
+}
+
+def get_log_font():
+    """현재 OS에 맞는 로그용 폰트 반환"""
+    os_name = platform.system()
+    return OS_FONTS.get(os_name, ('맑은 고딕', 10))  # 기본값
 
 def create_gui():
     """GUI 생성 및 실행"""
@@ -13,6 +24,7 @@ def create_gui():
     device_info = {}
     current_thread = None
     available_scripts = get_available_scripts()
+    tk_font = get_log_font()
     
     def log_message(message):
         """로그 텍스트 위젯에 메시지 추가"""
@@ -32,7 +44,7 @@ def create_gui():
         
         if not device_info:
             device_label.config(text="연결된 디바이스: ❌ 없음", foreground="red")
-            info_text.config(state='normal')
+            info_text.config(state='normal', font=tk_font)
             info_text.delete(1.0, tk.END)
             info_text.insert(1.0, "연결된 디바이스가 없습니다.\n\n확인사항:\n1. USB 디버깅이 활성화되어 있는지\n2. ADB 드라이버가 설치되어 있는지\n3. 디바이스가 올바르게 연결되어 있는지")
             info_text.config(state='disabled')
@@ -41,10 +53,10 @@ def create_gui():
             return
         
         # UI 업데이트
-        device_label.config(text=f"💿 연결된 디바이스: {device_info['deviceName']}", foreground="green")
+        device_label.config(text=f"✅ 연결된 디바이스: {device_info['deviceName']}", foreground="green", font=tk_font)
         
         info_content = f"📱 모델: {device_info['model']}\n🤖 안드로이드 버전: {device_info['platformVersion']}\n🔗 디바이스 ID: {device_info['deviceName']}"
-        info_text.config(state='normal')
+        info_text.config(state='normal', font=tk_font)
         info_text.delete(1.0, tk.END)
         info_text.insert(1.0, info_content)
         info_text.config(state='disabled')
@@ -62,22 +74,22 @@ def create_gui():
         
         selected_display_name = script_var.get()
         if not selected_display_name:
-            messagebox.showwarning("경고", "실행할 스크립트를 선택해주세요.")
+            messagebox.showwarning("⚠️ 경고", "실행할 스크립트를 선택해주세요.")
             return
         
         if not device_info:
-            messagebox.showwarning("경고", "먼저 디바이스 연결을 확인해주세요.")
+            messagebox.showwarning("⚠️ 경고", "먼저 디바이스 연결을 확인해주세요.")
             return
         
         # 표시명으로 실제 파일명 찾기
         script_filename = available_scripts.get(selected_display_name)
         if not script_filename:
-            messagebox.showerror("오류", "선택된 스크립트 파일을 찾을 수 없습니다.")
+            messagebox.showerror("⛔️ 오류", "선택된 스크립트 파일을 찾을 수 없습니다.")
             return
         
         script_path = os.path.join("scripts", script_filename)
         if not os.path.exists(script_path):
-            messagebox.showerror("오류", f"스크립트 파일이 존재하지 않습니다: {script_path}")
+            messagebox.showerror("⛔️ 오류", f"스크립트 파일이 존재하지 않습니다: {script_path}")
             return
         
         # 로그 클리어 및 UI 상태 변경
@@ -115,7 +127,7 @@ def create_gui():
         """스크립트 중지 버튼 핸들러"""
         # subprocess 중지는 runner.py에서 처리하도록 개선 필요
         log_message("⏹️ 스크립트 중지 요청...")
-        messagebox.showinfo("알림", "스크립트 중지 기능은 현재 개발 중입니다.")
+        messagebox.showinfo("⚠️ 알림", "스크립트 중지 기능은 현재 개발 중입니다.")
     
     def refresh_scripts():
         """스크립트 목록 새로고침"""
@@ -142,14 +154,14 @@ def create_gui():
     connection_frame = ttk.Frame(adb_frame)
     connection_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E))
     
-    ttk.Button(connection_frame, text="디바이스 연결 확인", 
+    ttk.Button(connection_frame, text="디바이스 연결", 
               command=on_check_connection).grid(row=0, column=0, padx=(0, 10))
     
     device_label = ttk.Label(connection_frame, text="연결된 디바이스: 없음", foreground="red")
     device_label.grid(row=0, column=1, sticky=tk.W)
     
     info_text = tk.Text(adb_frame, height=4, width=70, state='disabled', 
-                        font=('Consolas', 9), bg='#f8f8f8')
+                        font= tk_font, bg='#f8f8f8')
     info_text.grid(row=1, column=0, columnspan=2, pady=(10, 0), sticky=(tk.W, tk.E))
     
     # 2. 스크립트 선택 섹션
@@ -183,11 +195,11 @@ def create_gui():
     stop_button.grid(row=0, column=1)
     
     # 4. 로그 출력 섹션
-    log_frame = ttk.LabelFrame(main_frame, text="📋 실시간 로그", padding="20")
+    log_frame = ttk.LabelFrame(main_frame, text="📋 진행 로그", padding="20")
     log_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
     
     log_text = scrolledtext.ScrolledText(log_frame, height=18, state='disabled',
-                                        font=('Consolas', 10), bg='#1e1e1e', fg="#ececec",
+                                        font= tk_font, bg='#1e1e1e', fg="#ececec",
                                         insertbackground='#ffffff')
     log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     
@@ -207,11 +219,12 @@ def create_gui():
     log_message(f"   • 최대 등록 한도 팝업 확인용 (스크립트별 일정 시간 소요)")  
     log_message("=" * 70)
     log_message("📋 사용방법:")
-    log_message(f"   1. 디바이스 연결 확인")
-    log_message(f"   2. 스크립트 선택")
+    log_message(f"   1. cmd / terminal 에서 appium 서버 실행")
+    log_message(f"   2. 디바이스 연결 확인")
+    log_message(f"   3. 스크립트 선택")
     log_message(f"      ❗ 스크립트 실행 버튼을 누르기 전, 연결한 단말에서 해당 앱의 스팸 기능 페이지로 진입해주세요.")
     log_message(f"      예) 익시오 - 설정 > 스팸 알림 및 수신 차단 > 전화 차단 진입") 
-    log_message(f"   3. 스크립트 실행")
+    log_message(f"   4. 스크립트 실행")
     log_message("=" * 70)
     
     refresh_scripts()

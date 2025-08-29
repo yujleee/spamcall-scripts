@@ -11,24 +11,32 @@ from appium.options.android import UiAutomator2Options
 from utils.util import find
 
 # ===============================================================
-# 📱 스팸전화알림 번호 직접 차단 / 차단제외 번호 설정 최대 갯수 (100개) 확인 스크립트
-# - 차단 번호 / 차단 제외 번호의 최대 갯수까지 자동으로 추가 후 최대 갯수 팝업 확인 및 새 번호 추가 확인
+# 📱 모바일 매니저 차단 번호 관리 차단 최대 갯수 (600개) 확인 스크립트
+# - 차단 번호 / 차단하지 않을 번호의 최대 갯수까지 자동으로 추가 후 최대 갯수 팝업을 확인함
 # ===============================================================
-# - 최종 수정일: 2025-06-30
+# - 최종 수정일: 2025-06-24
 # ===============================================================
 # - ✨ 실행 전 확인 사항
-# - 앱 실행 > 안심설정 > 번호 직접 차단 or 차단제외 번호 설정 진입한 후 스크립트 실행
+# - 앱 실행 > 설정 > 스팸 차단/예외 설정 > 차단 번호 관리 or 차단하지 않을 번호 관리 진입 후 스크립트 실행
 
 
 
 def add_spam_number():
+    device_name = os.environ.get('APPIUM_DEVICE_NAME')
+    platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+
+    if not device_name or not platform_version:
+        print("❌ 디바이스 정보가 설정되지 않았습니다.")
+        print("GUI에서 실행해주세요.")
+        sys.exit(1)
+
     caps = {
         "platformName": "Android",
         "automationName": "UiAutomator2",
-        "deviceName": "R3CRB0KPP1", # 연결한 디바이스 명 변경 필요
-        "platformVersion": "14", # OS 다를 경우 변경 필요
-        "appPackage": "com.lguplus.spamcallnoti", 
-        "appActivity": "com.lguplus.spamcallnoti.activity.mainactivity.MainActivity",
+        "deviceName": device_name,
+        "platformVersion": platform_version,
+        "appPackage": "lgt.call", 
+        "appActivity": "lgt.call.Main",
         "autoGrantPermissions": True,
         "noReset": True,        # 앱 데이터 초기화 방지
         "fullReset": False      # 앱 제거 후 재설치 방지
@@ -40,38 +48,35 @@ def add_spam_number():
 
     try:
 
-        # 1부터 100까지 등록 (101은 팝업 확인용)
-        for i in range(1, 102):
+        # 1부터 600까지 등록 (601은 팝업 확인용)
+        for i in range(1, 602):
 
             # 세 자리 숫자로 입력
             padded_number = f"{i:03}" 
 
-            btn_add_number = find(driver, AppiumBy.ACCESSIBILITY_ID, '시작번호 추가 버튼')
-            btn_add_number.click()
-
-            input_field = find(driver, AppiumBy.ID, 'com.lguplus.spamcallnoti:id/id_et_inputtxt')
+            input_field = find(driver, AppiumBy.ID, 'lgt.call:id/spam_number_allow_block_edit_number')
             input_field.click()
 
             input_field.send_keys(str(padded_number))
 
-            btn_register = find(driver, AppiumBy.ID, 'com.lguplus.spamcallnoti:id/id_btn_dialog_pos')
+            btn_register = find(driver, AppiumBy.ID, 'lgt.call:id/spam_number_allow_block_register_button')
             btn_register.click()
 
-            if i <= 100 :
+            if i <= 600 :
                 print(f"🕹️ 번호 {i} 등록 완료!")
             
             time.sleep(0.5)
 
            # 차단 갯수 초과 팝업 확인
-            if i > 100:
+            if i > 600:
                 try:
-                    popup = find(driver, AppiumBy.ID, 'com.lguplus.spamcallnoti:id/id_tv_dialog_content_center')
+                    popup = find(driver, AppiumBy.ID, 'lgt.call:id/title')
                     print("✅ 팝업 노출 확인:", popup.text)            
                 
-                    btn_popup_add = find(driver, AppiumBy.ID, 'com.lguplus.spamcallnoti:id/id_btn_dialog_pos')
-                    btn_popup_add.click()
+                    btn_popupClose = find(driver, AppiumBy.ID, 'lgt.call:id/confirmButton')
+                    btn_popupClose.click()
 
-                    print("✅ 번호 추가 후 팝업 닫기 완료! 스크립트 실행 끝!")
+                    print("✅ 팝업 닫기 완료! 스크립트 실행 끝!")
 
                 except Exception as e:
                        print(f"❌ 팝업 미노출 또는 닫기 실패: {e}")

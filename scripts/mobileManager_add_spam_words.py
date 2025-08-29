@@ -25,11 +25,19 @@ from utils.util import find
 
 
 def add_spam_words():
+    device_name = os.environ.get('APPIUM_DEVICE_NAME')
+    platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+
+    if not device_name or not platform_version:
+        print("❌ 디바이스 정보가 설정되지 않았습니다.")
+        print("GUI에서 실행해주세요.")
+        sys.exit(1)
+
     caps = {
         "platformName": "Android",
         "automationName": "UiAutomator2",
-        "deviceName": "R3CRB0KPP1", # 연결한 디바이스 명 변경 필요
-        "platformVersion": "14",
+        "deviceName": device_name, 
+        "platformVersion": platform_version,
         "appPackage": "lgt.call", 
         "appActivity": "lgt.call.Main",
         "autoGrantPermissions": True,

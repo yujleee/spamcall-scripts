@@ -2,7 +2,7 @@ import os
 import platform
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, font
-from runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script
+from runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script, auto_open_appium_terminal
 
 OS_FONTS = {
     'Darwin': ('AppleSDGothicNeo', 12),      
@@ -221,16 +221,18 @@ def create_gui():
     log_message("🎯 Appium Script Runner for Testing v1.0 (AOS only)")
     log_message(f"   • 스팸 전화번호 및 차단 단어 자동 추가 프로그램")
     log_message(f"   • 최대 등록 한도 팝업 확인용 (스크립트별 일정 시간 소요)")  
+    log_message(f"   • 실행 전 APPIUM 환경 설정이 필요합니다.")  
     log_message("=" * 70)
     log_message("📋 사용방법:")
-    log_message(f"   1. cmd / terminal 에서 appium 서버 실행")
-    log_message(f"   2. 디바이스 연결 확인")
-    log_message(f"   3. 스크립트 선택")
+    log_message(f"   1. 디바이스 연결 확인")
+    log_message(f"   2. 스크립트 선택")
     log_message(f"      ❗ 스크립트 실행 버튼을 누르기 전, 연결한 단말에서 해당 앱의 스팸 기능 페이지로 진입해주세요.")
-    log_message(f"      예) 익시오 - 설정 > 스팸 알림 및 수신 차단 > 전화 차단 진입") 
-    log_message(f"   4. 스크립트 실행")
+    log_message(f"      예) 익시오 스팸번호 추가 - 설정 > 스팸 알림 및 수신 차단 > 전화 차단 진입") 
+    log_message(f"   3. 스크립트 실행")
     log_message("=" * 70)
     
     refresh_scripts()
+    
+    root.after(1000, auto_open_appium_terminal)  # Appium 서버 터미널 자동 오픈 (옵션)
     
     root.mainloop()

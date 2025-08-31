@@ -1,5 +1,6 @@
 import subprocess
 import threading
+import platform
 import os
 import sys
 from pathlib import Path
@@ -16,6 +17,19 @@ SCRIPT_MAPPING = {
 # 실행 중인 프로세스를 관리하는 전역 변수
 running_process = None
 running_thread = None
+
+def auto_open_appium_terminal():
+    """GUI 시작 시 자동으로 터미널 열고 appium 실행"""
+    system = platform.system()
+    
+    if system == 'Darwin':  # macOS
+        applescript = '''tell application "Terminal"
+            do script "appium"
+        end tell'''
+        subprocess.run(['osascript', '-e', applescript])
+        
+    elif system == 'Windows':  # Windows
+        subprocess.Popen(['cmd', '/k', 'appium'], creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 def get_available_scripts():
     """사용 가능한 스크립트들을 찾아서 반환"""
@@ -182,32 +196,7 @@ def is_script_running():
     global running_process
     return running_process is not None and running_process.poll() is None
 
-# GUI에서 사용할 수 있는 헬퍼 함수들
-def get_running_status():
-    """실행 상태 정보 반환"""
-    if is_script_running():
-        return "실행 중"
-    else:
-        return "대기 중"
 
-# 테스트용 (실제 GUI에서는 사용하지 않음)
-if __name__ == "__main__":
-    def test_log_callback(message):
-        print(f"[LOG] {message}")
-    
-    def test_finish_callback():
-        print("[FINISH] 스크립트 실행 완료")
-    
-    # 사용 가능한 스크립트 확인
-    scripts = get_available_scripts()
-    print("사용 가능한 스크립트:", scripts)
-    
-    # ADB 연결 확인
-    device_info = check_adb_connection()
-    if device_info:
-        print("디바이스 정보:", device_info)
-        
-        # 스크립트 실행 테스트 (실제로는 실행하지 않음)
-        print("테스트 완료")
-    else:
-        print("ADB 디바이스를 찾을 수 없습니다.")
+
+
+

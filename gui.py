@@ -2,7 +2,7 @@ import os
 import platform
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, font
-from runner import get_available_scripts, check_adb_connection, execute_script
+from runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script
 
 OS_FONTS = {
     'Darwin': ('AppleSDGothicNeo', 12),      
@@ -127,7 +127,11 @@ def create_gui():
         """스크립트 중지 버튼 핸들러"""
         # subprocess 중지는 runner.py에서 처리하도록 개선 필요
         log_message("⏹️ 스크립트 중지 요청...")
-        messagebox.showinfo("⚠️ 알림", "스크립트 중지 기능은 현재 개발 중입니다.")
+        stop_running_script()
+        messagebox.showinfo("⚠️ 알림", "스크립트가 중지 되었습니다.")
+        run_button.config(state='normal')
+        stop_button.config(state='disabled')
+        script_combo.config(state='readonly')
     
     def refresh_scripts():
         """스크립트 목록 새로고침"""

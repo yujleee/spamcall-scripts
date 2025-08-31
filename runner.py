@@ -7,13 +7,18 @@ from pathlib import Path
 # 스크립트 파일명과 GUI에 표시할 이름 매핑
 SCRIPT_MAPPING = {
     "ixiO_add_spamList.py": "익시오 - 스팸 번호 추가",
+    "ixiO_add_spam_words.py": "익시오 - 스팸 단어 추가",
     "mobileManager_add_spam_number.py": "모바일매니저 - 스팸 번호 추가", 
     "spamcallnoti_add_spam_number.py": "스팸전화알림 - 스팸 번호 추가",
     "mobileManager_add_spam_words.py": "모바일매니저 - 스팸 단어 추가"
 }
 
+# 실행 중인 프로세스를 관리하는 전역 변수
+running_process = None
+running_thread = None
+
 def get_available_scripts():
-    #"""사용 가능한 스크립트들을 찾아서 반환"""
+    """사용 가능한 스크립트들을 찾아서 반환"""
     scripts_dir = Path("scripts")
     if not scripts_dir.exists():
         return {}
@@ -27,7 +32,7 @@ def get_available_scripts():
     return available_scripts
 
 def get_device_property(device_id, prop_name):
-   #"""디바이스 속성 값 가져오기"""
+    """디바이스 속성 값 가져오기"""
     try:
         result = subprocess.run(['adb', '-s', device_id, 'shell', 'getprop', prop_name],
                               capture_output=True, text=True, timeout=5)
@@ -36,7 +41,7 @@ def get_device_property(device_id, prop_name):
         return "Unknown"
 
 def check_adb_connection():
-    #"""ADB 디바이스 연결 확인 및 정보 수집"""
+    """ADB 디바이스 연결 확인 및 정보 수집"""
     try:
         result = subprocess.run(['adb', 'devices'], 
                               capture_output=True, text=True, timeout=10)
@@ -65,10 +70,35 @@ def check_adb_connection():
     except Exception:
         return None
 
+def stop_running_script():
+    """실행 중인 스크립트 중지"""
+    global running_process, running_thread
+    
+    if running_process and running_process.poll() is None:
+        try:
+            running_process.terminate()
+            # 강제 종료가 필요한 경우
+            try:
+                running_process.wait(timeout=3)
+                return True
+            except subprocess.TimeoutExpired:
+                running_process.kill()
+                running_process.wait()
+                return True
+            
+        except Exception as e:
+            print(f"스크립트 중지 오류: {e}")
+            return False
+    
+    return False
+
 def execute_script(script_filename, device_name, platform_version, log_callback=None, finish_callback=None):
-    # """스크립트를 별도 프로세스로 실행"""
+    """스크립트를 별도 프로세스로 실행"""
+    global running_process, running_thread
+    
     def run_in_thread():
-        process = None
+        global running_process
+        
         try:
             script_path = os.path.join("scripts", script_filename)
             
@@ -76,32 +106,52 @@ def execute_script(script_filename, device_name, platform_version, log_callback=
             env = os.environ.copy()
             env['APPIUM_DEVICE_NAME'] = device_name
             env['APPIUM_PLATFORM_VERSION'] = platform_version
+            env['PYTHONUNBUFFERED'] = '1'  # Python 출력 버퍼링 비활성화
             
-            # Python 스크립트 실행
-            process = subprocess.Popen(
-                [sys.executable, script_path],
+            if log_callback:
+                log_callback(f"🚀 스크립트 시작: {script_filename}")
+            
+            # Python 스크립트 실행 (실시간 출력을 위한 설정)
+            running_process = subprocess.Popen(
+                [sys.executable, '-u', script_path],  # -u 옵션으로 버퍼링 비활성화
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                bufsize=1,
+                bufsize=0,  # 버퍼 크기를 0으로 설정
                 universal_newlines=True,
                 env=env
             )
             
             # 실시간 로그 출력
             while True:
-                output = process.stdout.readline()
-                if output == '' and process.poll() is not None:
+                # 프로세스가 종료되었는지 체크
+                if running_process.poll() is not None:
+                    # 남은 출력이 있는지 확인
+                    remaining_output = running_process.stdout.read()
+                    if remaining_output and log_callback:
+                        for line in remaining_output.strip().split('\n'):
+                            if line.strip():
+                                log_callback(line.strip())
                     break
-                if output and log_callback:
-                    log_callback(output.strip())
+                
+                # 한 줄씩 읽기
+                try:
+                    output = running_process.stdout.readline()
+                    if output and log_callback:
+                        log_callback(output.strip())
+                except Exception as e:
+                    if log_callback:
+                        log_callback(f"로그 읽기 오류: {e}")
+                    break
             
             # 프로세스 완료 대기
-            return_code = process.wait()
+            return_code = running_process.wait()
             
             if log_callback:
                 if return_code == 0:
                     log_callback("🎉 스크립트가 성공적으로 완료되었습니다!")
+                elif return_code == -15:  # SIGTERM (정상적인 중지)
+                    log_callback("⏹️ 스크립트가 사용자에 의해 중지되었습니다.")
                 else:
                     log_callback(f"❌ 스크립트가 오류로 종료되었습니다. (종료 코드: {return_code})")
             
@@ -110,12 +160,54 @@ def execute_script(script_filename, device_name, platform_version, log_callback=
                 log_callback(f"❌ 스크립트 실행 오류: {e}")
         
         finally:
+            running_process = None
             if finish_callback:
                 finish_callback()
     
-    # 별도 스레드에서 실행
-    thread = threading.Thread(target=run_in_thread)
-    thread.daemon = True
-    thread.start()
+    # 이미 실행 중인 스크립트가 있으면 중지
+    if running_process and running_process.poll() is None:
+        if log_callback:
+            log_callback("⚠️ 이전 스크립트를 중지하고 새 스크립트를 시작합니다.")
+        stop_running_script()
     
-    return thread
+    # 별도 스레드에서 실행
+    running_thread = threading.Thread(target=run_in_thread)
+    running_thread.daemon = True
+    running_thread.start()
+    
+    return running_thread
+
+def is_script_running():
+    """스크립트가 실행 중인지 확인"""
+    global running_process
+    return running_process is not None and running_process.poll() is None
+
+# GUI에서 사용할 수 있는 헬퍼 함수들
+def get_running_status():
+    """실행 상태 정보 반환"""
+    if is_script_running():
+        return "실행 중"
+    else:
+        return "대기 중"
+
+# 테스트용 (실제 GUI에서는 사용하지 않음)
+if __name__ == "__main__":
+    def test_log_callback(message):
+        print(f"[LOG] {message}")
+    
+    def test_finish_callback():
+        print("[FINISH] 스크립트 실행 완료")
+    
+    # 사용 가능한 스크립트 확인
+    scripts = get_available_scripts()
+    print("사용 가능한 스크립트:", scripts)
+    
+    # ADB 연결 확인
+    device_info = check_adb_connection()
+    if device_info:
+        print("디바이스 정보:", device_info)
+        
+        # 스크립트 실행 테스트 (실제로는 실행하지 않음)
+        print("테스트 완료")
+    else:
+        print("ADB 디바이스를 찾을 수 없습니다.")

@@ -9,6 +9,8 @@ OS_FONTS = {
     'Windows': ('맑은 고딕', 10),    
 }
 
+
+
 def get_log_font():
     """현재 OS에 맞는 로그용 폰트 반환"""
     os_name = platform.system()
@@ -17,9 +19,11 @@ def get_log_font():
 def create_gui():
     """GUI 생성 및 실행"""
     root = tk.Tk()
-    root.title("Appium Script Runner for Testing")
+    root.title("Appium Script Runner")
     root.iconbitmap('./img/icon.ico')
     root.geometry("900x650")
+
+    
     
     # 상태 변수들
     device_info = {}
@@ -148,6 +152,7 @@ def create_gui():
             log_message("⚠️ scripts 폴더에서 등록된 스크립트를 찾을 수 없습니다.")
             log_message("   SCRIPT_MAPPING에 스크립트를 추가해주세요.")
     
+
     # ===== UI 구성 =====
     main_frame = ttk.Frame(root, padding="10")
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -219,7 +224,7 @@ def create_gui():
     connection_frame.columnconfigure(1, weight=1)
     
     # 초기화
-    log_message("🎯 Appium Script Runner for Testing v1.0 (AOS only)")
+    log_message("🚀 Appium Script Runner v1.0 (AOS only)")
     log_message(f"   • 스팸 전화번호 및 차단 단어 자동 추가 프로그램")
     log_message(f"   • 최대 등록 한도 팝업 확인용 (스크립트별 일정 시간 소요)")  
     log_message(f"   • 실행 전 APPIUM 환경 설정이 필요합니다.")  
@@ -227,13 +232,14 @@ def create_gui():
     log_message("📋 사용방법:")
     log_message(f"   1. 디바이스 연결 확인")
     log_message(f"   2. 스크립트 선택")
-    log_message(f"      ❗ 스크립트 실행 버튼을 누르기 전, 연결한 단말에서 해당 앱의 스팸 기능 페이지로 진입해주세요.")
+    log_message(f"      ❗ 스크립트 실행 전, 연결한 단말에서 해당 앱에서 실행할 기능 화면으로 진입해주세요.")
     log_message(f"      예) 익시오 스팸번호 추가 - 설정 > 스팸 알림 및 수신 차단 > 전화 차단 진입") 
     log_message(f"   3. 스크립트 실행")
     log_message("=" * 70)
     
     refresh_scripts()
     
-    root.after(1000, auto_open_appium_terminal)  # Appium 서버 터미널 자동 오픈 (옵션)
-    
+    root.after(1000, auto_open_appium_terminal)
+
     root.mainloop()
+        

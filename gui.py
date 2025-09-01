@@ -18,6 +18,7 @@ def create_gui():
     """GUI 생성 및 실행"""
     root = tk.Tk()
     root.title("Appium Script Runner for Testing")
+    root.iconbitmap('./img/icon.ico')
     root.geometry("900x650")
     
     # 상태 변수들

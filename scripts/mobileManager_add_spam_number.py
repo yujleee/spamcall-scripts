@@ -68,7 +68,10 @@ def add_spam_number():
             time.sleep(0.5)
 
            # 차단 갯수 초과 팝업 확인
-            if i > 600:
+            list_count_field = find(driver, AppiumBy, 'lgt.call:id/spam_number_block_list_count')
+            list_count = int(list_count_field.text)
+
+            if i >= list_count:
                 try:
                     popup = find(driver, AppiumBy.ID, 'lgt.call:id/title')
                     print("✅ 팝업 노출 확인:", popup.text)            

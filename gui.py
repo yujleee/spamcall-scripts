@@ -1,8 +1,13 @@
 import os
 import platform
+
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, font
 from runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script, auto_open_appium_terminal
+
+
+os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 OS_FONTS = {
     'Darwin': ('AppleSDGothicNeo', 12),      

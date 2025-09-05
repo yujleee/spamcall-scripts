@@ -3,7 +3,7 @@ import platform
 
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, font
+from tkinter import ttk, messagebox, scrolledtext
 from runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script, auto_open_appium_terminal
 
 
@@ -13,7 +13,6 @@ OS_FONTS = {
     'Darwin': ('AppleSDGothicNeo', 12),      
     'Windows': ('맑은 고딕', 10),    
 }
-
 
 
 def get_log_font():
@@ -27,8 +26,7 @@ def create_gui():
     root.title("Appium Script Runner")
     root.iconbitmap('./img/icon.ico')
     root.geometry("900x650")
-
-    
+  
     
     # 상태 변수들
     device_info = {}

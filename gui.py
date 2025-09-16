@@ -5,20 +5,9 @@ import platform
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script, auto_open_appium_terminal
-
+from utils.font import get_log_font
 
 os.environ['PYTHONIOENCODING'] = 'utf-8'
-
-OS_FONTS = {
-    'Darwin': ('AppleSDGothicNeo', 12),      
-    'Windows': ('맑은 고딕', 10),    
-}
-
-
-def get_log_font():
-    """현재 OS에 맞는 로그용 폰트 반환"""
-    os_name = platform.system()
-    return OS_FONTS.get(os_name, ('맑은 고딕', 10))  # 기본값
 
 def create_gui():
     """GUI 생성 및 실행"""
@@ -212,7 +201,7 @@ def create_gui():
     log_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
     
     log_text = scrolledtext.ScrolledText(log_frame, height=18, state='disabled',
-                                        font= tk_font, bg='#1e1e1e', fg="#ececec",
+                                        font= tk_font, bg="#2c2c2c", fg="#F1F1F1",
                                         insertbackground='#ffffff')
     log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     
@@ -231,14 +220,14 @@ def create_gui():
     log_message(f"   • 스팸 전화번호 및 차단 단어 자동 추가 프로그램")
     log_message(f"   • 최대 등록 한도 팝업 확인용 (스크립트별 일정 시간 소요)")  
     log_message(f"   • 실행 전 APPIUM 환경 설정이 필요합니다.")  
-    log_message("=" * 70)
+    log_message("=" * 60)
     log_message("📋 사용방법:")
     log_message(f"   1. 디바이스 연결 확인")
     log_message(f"   2. 스크립트 선택")
     log_message(f"      ❗ 스크립트 실행 전, 연결한 단말에서 해당 앱에서 실행할 기능 화면으로 진입해주세요.")
     log_message(f"      예) 익시오 스팸번호 추가 - 설정 > 스팸 알림 및 수신 차단 > 전화 차단 진입") 
     log_message(f"   3. 스크립트 실행")
-    log_message("=" * 70)
+    log_message("=" * 60)
     
     refresh_scripts()
     

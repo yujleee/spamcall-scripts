@@ -32,33 +32,34 @@ def check_requirements():
             "실행할 스크립트를 scripts 폴더에 넣어주세요."
         )
     
-    # 3. ADB 설치 여부 확인 (선택적)
-    try:
-        import subprocess
-        subprocess.run(['adb', 'version'], 
-                      capture_output=True, timeout=5)
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        result = messagebox.askyesno(
-            "ADB 확인",
-            "ADB가 설치되어 있지 않거나 PATH에 설정되지 않았습니다.\n"
-            "계속 진행하시겠습니까?\n\n"
-            "(나중에 GUI에서 ADB 연결을 확인할 수 있습니다)"
-        )
-        if not result:
-            return False
-    
     return True
+
+def check_and_setup_environment():
+    """실행환경 체크 및 필요시 설정"""
+    try:
+        from environment_checker import check_environment_and_setup
+        return check_environment_and_setup()
+    except ImportError:
+        # environment_checker가 없으면 그냥 진행
+        print("환경 체크 모듈을 찾을 수 없습니다. 기본 환경으로 진행합니다.")
+        return True
+    except Exception as e:
+        print(f"환경 체크 중 오류: {e}")
+        # 오류가 있어도 일단 진행 (기존처럼)
+        return True
 
 def main():
     """메인 실행 함수"""
     
     # 콘솔창 숨기기 (exe 패키징 시 유용)
     if hasattr(sys, 'frozen'):
-        # PyInstaller로 패키징된 경우
-        import ctypes
-        ctypes.windll.user32.ShowWindow(
-            ctypes.windll.kernel32.GetConsoleWindow(), 0
-        )
+        try:
+            import ctypes
+            ctypes.windll.user32.ShowWindow(
+                ctypes.windll.kernel32.GetConsoleWindow(), 0
+            )
+        except:
+            pass
     
     # tkinter 지원 확인
     try:
@@ -69,8 +70,12 @@ def main():
         print("GUI 라이브러리를 사용할 수 없습니다.")
         sys.exit(1)
     
-    # 요구사항 체크
+    # 기본 요구사항 체크
     if not check_requirements():
+        sys.exit(1)
+    
+    # 실행환경 체크 (포터블 환경 설치 등)
+    if not check_and_setup_environment():
         sys.exit(1)
     
     # GUI 모듈 임포트 및 실행
@@ -85,8 +90,8 @@ def main():
     except ImportError as e:
         messagebox.showerror(
             "모듈 오류",
-            f"runner.py 모듈을 불러올 수 없습니다: {e}\n"
-            "runner.py 파일이 같은 폴더에 있는지 확인해주세요."
+            f"gui.py 모듈을 불러올 수 없습니다: {e}\n"
+            "gui.py 파일이 같은 폴더에 있는지 확인해주세요."
         )
         sys.exit(1)
     except Exception as e:

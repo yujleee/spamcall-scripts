@@ -22,11 +22,19 @@ from utils.util import find
 
 
 def add_spam_number():
+    device_name = os.environ.get('APPIUM_DEVICE_NAME')
+    platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+
+    if not device_name or not platform_version:
+        print("❌ 디바이스 정보가 설정되지 않았습니다.")
+        print("GUI에서 실행해주세요.")
+        sys.exit(1)
+
     caps = {
         "platformName": "Android",
         "automationName": "UiAutomator2",
-        "deviceName": "R3CRB0KPP1", # 연결한 디바이스 명 변경 필요
-        "platformVersion": "14", # OS 다를 경우 변경 필요
+        "deviceName": device_name,
+        "platformVersion": platform_version,
         "appPackage": "lgt.call", 
         "appActivity": "lgt.call.Main",
         "autoGrantPermissions": True,
@@ -60,7 +68,10 @@ def add_spam_number():
             time.sleep(0.5)
 
            # 차단 갯수 초과 팝업 확인
-            if i > 600:
+            list_count_field = find(driver, AppiumBy, 'lgt.call:id/spam_number_block_list_count')
+            list_count = int(list_count_field.text)
+
+            if i >= list_count:
                 try:
                     popup = find(driver, AppiumBy.ID, 'lgt.call:id/title')
                     print("✅ 팝업 노출 확인:", popup.text)            

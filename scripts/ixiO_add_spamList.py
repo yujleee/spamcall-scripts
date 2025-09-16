@@ -20,11 +20,19 @@ from datetime import datetime
 
 
 def add_spam_number():
+    device_name = os.environ.get('APPIUM_DEVICE_NAME')
+    platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+
+    if not device_name or not platform_version:
+        print("❌ 디바이스 정보가 설정되지 않았습니다.")
+        print("GUI에서 실행해주세요.")
+        sys.exit(1)
+
     caps = {
         "platformName": "Android",
         "automationName": "UiAutomator2",
-        "deviceName": "R3CX20TEEMV",
-        "platformVersion": "14",
+        "deviceName": device_name,
+        "platformVersion": platform_version,
         "appPackage": "com.lguplus.aicallagent",
         "appActivity": "com.lguplus.aicallagent.MainActivity",
         "autoGrantPermissions": True,
@@ -42,7 +50,7 @@ def add_spam_number():
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # 3. 1부터 600까지 반복
-        for i in range(598,601):
+        for i in range(1,602):
 
                 # 세 자리 숫자로 입력
                 padded_number = f"{i:03}" 
@@ -100,4 +108,4 @@ def add_spam_number():
         driver.quit()
 
 if __name__ == "__main__":
-    add_spam_number()
+   add_spam_number()

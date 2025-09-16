@@ -122,7 +122,7 @@ def check_system_environment():
 def check_portable_runtime():
     """포터블 런타임 환경 확인"""
     try:
-        from setup_runtime import check_runtime_exists
+        from src.setup_runtime import check_runtime_exists
         return check_runtime_exists()
     except ImportError:
         return False
@@ -267,7 +267,7 @@ def install_portable_environment():
         progress_root.update()
         
         # 실제 설치 실행
-        from setup_runtime import install_runtime
+        from src.setup_runtime import install_runtime
         success = install_runtime()
         
         progress.stop()
@@ -293,7 +293,7 @@ def check_environment_and_setup():
         safe_print("✅ 포터블 환경이 이미 설치되어 있습니다.")
         # 포터블 환경 경로 설정
         try:
-            from setup_runtime import get_portable_executable_paths
+            from src.setup_runtime import get_portable_executable_paths
             from pathlib import Path
             exe_paths = get_portable_executable_paths()
             if exe_paths:

@@ -1,12 +1,3 @@
-"""
-Appium Script Runner - Entry Point
-GUI 기반 Appium 스크립트 실행기
-
-사용법:
-    python main.py
-    또는 exe로 패키징 후 실행
-"""
-
 import sys, os
 import tkinter as tk
 from tkinter import messagebox
@@ -37,7 +28,7 @@ def check_requirements():
 def check_and_setup_environment():
     """실행환경 체크 및 필요시 설정"""
     try:
-        from environment_checker import check_environment_and_setup
+        from src.environment_checker import check_environment_and_setup
         return check_environment_and_setup()
     except ImportError:
         # environment_checker가 없으면 그냥 진행
@@ -80,7 +71,7 @@ def main():
     
     # GUI 모듈 임포트 및 실행
     try:
-        from gui import create_gui
+        from src.gui import create_gui
         
         root.destroy()  # 임시 root 창 완전히 제거
         

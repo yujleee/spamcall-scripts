@@ -1,10 +1,7 @@
 import os
-import platform
-
-
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
-from runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script, auto_open_appium_terminal
+from src.runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script, auto_open_appium_terminal
 from utils.font import get_log_font
 
 os.environ['PYTHONIOENCODING'] = 'utf-8'

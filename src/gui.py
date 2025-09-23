@@ -1,6 +1,7 @@
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
+from main import get_resource_path
 from src.runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script, auto_open_appium_terminal
 from utils.font import get_log_font
 
@@ -10,7 +11,9 @@ def create_gui():
     """GUI 생성 및 실행"""
     root = tk.Tk()
     root.title("Appium Script Runner")
-    root.iconbitmap('./img/icon.ico')
+    icon_path = get_resource_path('img/icon.ico')
+    if os.path.exists(icon_path):
+        root.iconbitmap(icon_path)
     root.geometry("900x650")
   
     
@@ -81,7 +84,7 @@ def create_gui():
             messagebox.showerror("⛔️ 오류", "선택된 스크립트 파일을 찾을 수 없습니다.")
             return
         
-        script_path = os.path.join("scripts", script_filename)
+        script_path = os.path.join(get_resource_path("scripts"), script_filename)
         if not os.path.exists(script_path):
             messagebox.showerror("⛔️ 오류", f"스크립트 파일이 존재하지 않습니다: {script_path}")
             return

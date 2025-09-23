@@ -5,6 +5,8 @@ import os
 import sys
 from pathlib import Path
 
+from main import get_resource_path
+
 # 스크립트 파일명과 GUI에 표시할 이름 매핑
 SCRIPT_MAPPING = {
     "ixiO_add_spamList.py": "익시오 - 스팸 번호 추가",
@@ -33,14 +35,14 @@ def auto_open_appium_terminal():
 
 def get_available_scripts():
     """사용 가능한 스크립트들을 찾아서 반환"""
-    scripts_dir = Path("scripts")
-    if not scripts_dir.exists():
+    scripts_dir = get_resource_path("scripts")
+    if not os.path.exists(scripts_dir):
         return {}
     
     available_scripts = {}
     for filename, display_name in SCRIPT_MAPPING.items():
-        script_path = scripts_dir / filename
-        if script_path.exists():
+        script_path = os.path.join(scripts_dir, filename)
+        if os.path.exists(script_path):
             available_scripts[display_name] = filename
     
     return available_scripts
@@ -114,7 +116,7 @@ def execute_script(script_filename, device_name, platform_version, log_callback=
         global running_process
         
         try:
-            script_path = os.path.join("scripts", script_filename)
+            script_path = get_resource_path(os.path.join("scripts", script_filename))
             
             # 환경변수로 디바이스 정보 전달
             env = os.environ.copy()

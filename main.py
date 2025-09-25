@@ -75,10 +75,6 @@ def main():
     if not check_requirements():
         sys.exit(1)
     
-    # 실행환경 체크 (포터블 환경 설치 등)
-    if not check_and_setup_environment():
-        sys.exit(1)
-    
     # GUI 모듈 임포트 및 실행
     try:
         from src.gui import create_gui

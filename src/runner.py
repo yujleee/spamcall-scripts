@@ -3,7 +3,6 @@ import threading
 import platform
 import os
 import sys
-from pathlib import Path
 
 from main import get_resource_path
 

@@ -11,7 +11,6 @@ def create_gui():
     """GUI 생성 및 실행"""
     from src.setup_runtime import setup_runtime_if_needed, set_log_callback as set_runtime_log_callback
     from src.environment_checker import (
-        check_environment_and_setup,
         set_log_callback as set_checker_log_callback,
         check_system_environment,
         safe_print
@@ -23,7 +22,6 @@ def create_gui():
     if os.path.exists(icon_path):
         root.iconbitmap(icon_path)
     root.geometry("900x650")
-  
     
     # 상태 변수들
     device_info = {}
@@ -38,7 +36,6 @@ def create_gui():
         # 이모지가 포함된 메시지 처리
         start_idx = log_text.index("end-1c")
         log_text.insert(tk.END, f"{message}\n")
-        end_idx = log_text.index("end-1c")
         
         # 이모지 문자에 대해 특별한 폰트 적용
         for idx in range(len(message)):
@@ -158,6 +155,7 @@ def create_gui():
         script_combo['values'] = list(available_scripts.keys())
         
         if available_scripts:
+            log_message("=" * 60)
             log_message(f"📝 발견된 스크립트: {len(available_scripts)}개")
             for display_name, filename in available_scripts.items():
                 log_message(f"   • {display_name} ({filename})")
@@ -239,7 +237,7 @@ def create_gui():
     connection_frame.columnconfigure(1, weight=1)
     
     # 초기화
-    log_message("🚀 Appium Script Runner v1.0 (AOS only)")
+    log_message("🚀 Appium Script Runner v1.0.0 (AOS only)")
     
     # 로그 콜백 연결
     set_checker_log_callback(log_message)
@@ -257,8 +255,7 @@ def create_gui():
     
     log_message("=" * 60)
     log_message(f"   • 스팸 전화번호 및 차단 단어 자동 추가 프로그램")
-    log_message(f"   • 최대 등록 한도 팝업 확인용 (스크립트별 일정 시간 소요)")  
-    log_message(f"   • 실행 전 APPIUM 환경 설정이 필요합니다.")  
+    log_message(f"   • 최대 등록 한도 팝업 확인용 (스크립트별 일정 시간 소요)")   
     log_message("=" * 60)
     log_message("📋 사용방법:")
     log_message(f"   1. 디바이스 연결 확인")
@@ -266,7 +263,6 @@ def create_gui():
     log_message(f"      ❗ 스크립트 실행 전, 연결한 단말에서 해당 앱에서 실행할 기능 화면으로 진입해주세요.")
     log_message(f"      예) 익시오 스팸번호 추가 - 설정 > 스팸 알림 및 수신 차단 > 전화 차단 진입") 
     log_message(f"   3. 스크립트 실행")
-    log_message("=" * 60)
     
     refresh_scripts()
     

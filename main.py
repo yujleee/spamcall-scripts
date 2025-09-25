@@ -2,18 +2,30 @@ import sys, os
 import tkinter as tk
 from tkinter import messagebox
 
+from src.config import load_config, get_config
+
 def get_resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.abspath(".")
+        base_path = os.path.abspath(get_config('paths.resources_dir'))
     return os.path.join(base_path, relative_path)
 
 def check_requirements():
     """실행 전 필요한 요구사항들을 체크"""
-    scripts_path = get_resource_path("scripts")
+    # 설정 파일 로드
+    try:
+        load_config()
+    except Exception as e:
+        messagebox.showerror(
+            "설정 오류",
+            f"설정 파일을 로드할 수 없습니다: {e}"
+        )
+        return False
+    
+    scripts_path = get_resource_path(get_config('paths.scripts_dir'))
     
     # 1. scripts 폴더 존재 여부 확인
     if not os.path.exists(scripts_path):

@@ -1,0 +1,39 @@
+{
+    "paths": {
+        "scripts_dir": "scripts",
+        "resources_dir": ".",
+        "logs_dir": "logs"
+    },
+    "gui": {
+        "log_window": {
+            "height": 18,
+            "background_color": "#2c2c2c",
+            "foreground_color": "#F1F1F1",
+            "cursor_color": "#ffffff"
+        },
+        "fonts": {
+            "os_specific": {
+                "Darwin": {
+                    "family": "AppleSDGothicNeo",
+                    "size": 12
+                },
+                "Windows": {
+                    "family": "Segoe UI Emoji",
+                    "size": 10
+                },
+                "default": {
+                    "family": "Segoe UI Emoji",
+                    "size": 10
+                }
+            },
+            "emoji": {
+                "family": "Segoe UI Emoji",
+                "size": 10
+            }
+        },
+        "padding": {
+            "default": "10",
+            "log_frame": "20"
+        }
+    }
+}

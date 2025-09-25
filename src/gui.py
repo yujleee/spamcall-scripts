@@ -9,6 +9,14 @@ os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 def create_gui():
     """GUI 생성 및 실행"""
+    from src.setup_runtime import setup_runtime_if_needed, set_log_callback as set_runtime_log_callback
+    from src.environment_checker import (
+        check_environment_and_setup,
+        set_log_callback as set_checker_log_callback,
+        check_system_environment,
+        safe_print
+    )
+    
     root = tk.Tk()
     root.title("Appium Script Runner")
     icon_path = get_resource_path('img/icon.ico')
@@ -26,7 +34,20 @@ def create_gui():
     def log_message(message):
         """로그 텍스트 위젯에 메시지 추가"""
         log_text.config(state='normal')
+        
+        # 이모지가 포함된 메시지 처리
+        start_idx = log_text.index("end-1c")
         log_text.insert(tk.END, f"{message}\n")
+        end_idx = log_text.index("end-1c")
+        
+        # 이모지 문자에 대해 특별한 폰트 적용
+        for idx in range(len(message)):
+            char = message[idx]
+            if ord(char) > 0x1F000:  # 이모지 범위 확인
+                char_start = f"{start_idx}+{idx}c"
+                char_end = f"{start_idx}+{idx+1}c"
+                log_text.tag_add('emoji', char_start, char_end)
+        
         log_text.see(tk.END)
         log_text.config(state='disabled')
         root.update()
@@ -200,9 +221,11 @@ def create_gui():
     log_frame = ttk.LabelFrame(main_frame, text="📋 진행 로그", padding="20")
     log_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
     
+    # 이모지 지원을 위한 폰트 설정
     log_text = scrolledtext.ScrolledText(log_frame, height=18, state='disabled',
-                                        font= tk_font, bg="#2c2c2c", fg="#F1F1F1",
+                                        font=tk_font, bg="#2c2c2c", fg="#F1F1F1",
                                         insertbackground='#ffffff')
+    log_text.tag_configure('emoji', font=('Segoe UI Emoji', 10))
     log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     
     # 그리드 가중치 설정
@@ -217,6 +240,22 @@ def create_gui():
     
     # 초기화
     log_message("🚀 Appium Script Runner v1.0 (AOS only)")
+    
+    # 로그 콜백 연결
+    set_checker_log_callback(log_message)
+    set_runtime_log_callback(log_message)
+    
+    # 시스템 환경을 먼저 체크
+    tools_status, available_tools, missing_tools = check_system_environment()
+    if not missing_tools:
+        # 모든 도구가 있으면 포터블 환경 체크는 건너뜀
+        safe_print("✅ 시스템에 모든 필수 도구가 설치되어 있습니다.")
+    else:
+        # 누락된 도구가 있을 때만 setup_runtime 실행
+        if not setup_runtime_if_needed():
+            return
+    
+    log_message("=" * 60)
     log_message(f"   • 스팸 전화번호 및 차단 단어 자동 추가 프로그램")
     log_message(f"   • 최대 등록 한도 팝업 확인용 (스크립트별 일정 시간 소요)")  
     log_message(f"   • 실행 전 APPIUM 환경 설정이 필요합니다.")  

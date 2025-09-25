@@ -21,6 +21,7 @@ a = Analysis(
         ('src', 'src'),
         ('utils', 'utils'),
         ('img', 'img'),
+        ('config.json', '.'),  # 설정 파일을 루트 디렉토리에 포함
     ],
     hiddenimports=[
         'appium',
@@ -37,6 +38,19 @@ a = Analysis(
         'os',
         'sys',
         'pathlib',
+        'json',  # JSON 설정 파일 처리
+        'typing',  # Type hints
+        'src.config',  # 설정 모듈
+        'src.config.utils',
+        'src.config.validation',
+        'src.gui.components',  # GUI 컴포넌트
+        'src.gui.handlers',
+        'src.gui.state',
+        'src.errors',  # 에러 처리
+        'src.errors.handlers',
+        'src.errors.types',
+        'src.logging',  # 로깅
+        'src.logging.utils',
     ],
     hookspath=[],
     hooksconfig={},

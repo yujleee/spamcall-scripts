@@ -1,5 +1,6 @@
 """설정 관리 유틸리티 함수"""
 import os
+import sys
 import json
 from typing import Any, Dict, Optional
 from .validation import validate_config, REQUIRED_CONFIG
@@ -10,6 +11,14 @@ _config: Optional[Dict[str, Any]] = None
 def load_config(config_path: str = "config.json") -> Dict[str, Any]:
     """설정 파일을 로드하고 전역 설정 저장소에 저장"""
     global _config
+    
+    # PyInstaller 패키징 환경에서의 경로 처리
+    if hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    
+    config_path = os.path.join(base_path, config_path)
     
     if not os.path.exists(config_path):
         raise FileNotFoundError(

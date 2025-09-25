@@ -20,17 +20,30 @@ def setup_unicode_environment():
 
 # GUI에서 재정의할 수 있는 출력 함수
 safe_print = None
+_log_callback = None
+
+def set_log_callback(callback):
+    """GUI에서 로그 콜백 함수 설정"""
+    global _log_callback
+    _log_callback = callback
 
 def _default_safe_print(text):
     """기본 안전한 출력 함수"""
     try:
+        if _log_callback:
+            _log_callback(text)
         print(text)
     except UnicodeEncodeError:
         try:
             safe_text = str(text).encode('cp949', errors='replace').decode('cp949')
+            if _log_callback:
+                _log_callback(safe_text)
             print(safe_text)
         except:
-            print("[출력 오류: 특수문자 포함]")
+            msg = "[출력 오류: 특수문자 포함]"
+            if _log_callback:
+                _log_callback(msg)
+            print(msg)
 
 # 초기화
 if safe_print is None:
@@ -537,6 +550,9 @@ def get_portable_executable_paths():
 
 def setup_runtime_if_needed():
     """필요한 경우에만 실행환경 설치"""
+    import tkinter as tk
+    from tkinter import messagebox
+    
     setup_unicode_environment()
     
     if check_runtime_exists():
@@ -545,12 +561,15 @@ def setup_runtime_if_needed():
     safe_print("포터블 실행환경이 필요합니다. 자동으로 설치를 시작합니다...")
     safe_print("⚠️  인터넷 연결이 필요하며, 설치에 수 분이 걸릴 수 있습니다.")
     
-    user_input = input("계속 진행하시겠습니까? (y/n): ")
-    if user_input.lower() != 'y':
+    # GUI 메시지 박스로 사용자 확인
+    if messagebox.askyesno("환경 설정", 
+                          "포터블 실행환경 설치가 필요합니다.\n" +
+                          "인터넷 연결이 필요하며, 설치에 수 분이 걸릴 수 있습니다.\n\n" +
+                          "지금 설치하시겠습니까?"):
+        return install_runtime()
+    else:
         safe_print("설치가 취소되었습니다.")
         return False
-    
-    return install_runtime()
 
 def test_runtime_environment():
     """런타임 환경 테스트"""

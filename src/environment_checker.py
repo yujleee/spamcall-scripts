@@ -12,29 +12,30 @@ from tkinter import scrolledtext
 from utils.font import get_log_font
 
 tk_font = get_log_font()
-log_widget = None   # GUI 로그 창(Text 위젯) 참조용
+_log_callback = None
 
-def set_log_widget(widget):
-    """GUI 로그 출력용 Text 위젯을 safe_print에 등록"""
-    global log_widget
-    log_widget = widget
+def set_log_callback(callback):
+    """GUI 로그 콜백 함수 설정"""
+    global _log_callback
+    _log_callback = callback
 
 def safe_print(text):
     """안전한 출력 함수"""
     try:
+        if _log_callback:
+            _log_callback(text)
         print(text)
     except UnicodeEncodeError:
         try:
             safe_text = str(text).encode('cp949', errors='replace').decode('cp949')
+            if _log_callback:
+                _log_callback(safe_text)
             print(safe_text)
-            text = safe_text
         except:
-            print("[출력 오류: 특수문자 포함]")
-            text = "[출력 오류: 특수문자 포함]"
-
-    if log_widget is not None:
-        log_widget.insert(tk.END, str(text) + "\n")
-        log_widget.see(tk.END)  # 자동 스크롤
+            msg = "[출력 오류: 특수문자 포함]"
+            if _log_callback:
+                _log_callback(msg)
+            print(msg)
 
 def check_command_available(command, version_flag='--version', timeout=5):
     """명령어가 사용 가능한지 확인 (윈도우 호환)"""
@@ -169,7 +170,15 @@ def ask_user_choice(missing_tools):
         log_area.pack(pady=(0, 15), fill=tk.BOTH, expand=True)
 
         # safe_print가 log_area도 쓰도록 연결
-        set_log_widget(log_area)
+        # 로그 영역에 직접 출력
+        def log_to_widget(text):
+            log_area.config(state='normal')
+            log_area.insert(tk.END, str(text) + "\n")
+            log_area.see(tk.END)
+            log_area.config(state='disabled')
+            root.update()
+        
+        set_log_callback(log_to_widget)
         
         # 누락된 도구 표시
         missing_text = f"누락된 도구: {', '.join(missing_tools)}"

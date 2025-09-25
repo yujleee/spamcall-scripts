@@ -28,15 +28,20 @@ def create_connection_handler(device_info, device_label, info_text, run_button, 
             device_info.update(result)
         
         if not device_info:
-            error = create_device_error("not_found")
-            error_handler(error)
+            # 디바이스를 찾을 수 없을 때 로그를 한 번만 출력
+            logger[LogLevel.ERROR]("연결된 디바이스를 찾을 수 없습니다.")
+            
+            # UI 업데이트
             device_label.config(text="연결된 디바이스: ❌ 없음", foreground="red")
             info_text.config(state='normal', font=font)
             info_text.delete(1.0, tk.END)
             info_text.insert(1.0, "연결된 디바이스가 없습니다.\n\n확인사항:\n1. USB 디버깅이 활성화되어 있는지\n2. ADB 드라이버가 설치되어 있는지\n3. 디바이스가 올바르게 연결되어 있는지")
             info_text.config(state='disabled')
             run_button.config(state='disabled')
-            logger[LogLevel.ERROR]("연결된 디바이스를 찾을 수 없습니다.")
+            
+            # 에러 메시지 표시 (로그 없이)
+            error = create_device_error("not_found")
+            messagebox.showerror("오류", error.message)  # error_handler 대신 직접 메시지 표시
             return
         
         device_label.config(text=f"✅ 연결된 디바이스: {device_info['deviceName']}", foreground="green", font=font)

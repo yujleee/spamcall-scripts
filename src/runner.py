@@ -132,6 +132,8 @@ def execute_script(script_filename, device_name, platform_version, log_callback=
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=0,  # 버퍼 크기를 0으로 설정
+                encoding='utf-8',  # UTF-8 인코딩 명시
+                errors='replace',
                 universal_newlines=True,
                 env=env
             )

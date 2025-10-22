@@ -50,7 +50,7 @@ def add_spam_number():
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # 3. 1부터 600까지 반복
-        for i in range(1,602):
+        for i in range(20,602):
 
                 # 세 자리 숫자로 입력
                 padded_number = f"{i:03}" 
@@ -86,11 +86,17 @@ def add_spam_number():
                         break 
                 
                 try:
-                    xpath = f'//android.widget.TextView[@text="{padded_number}"]'
+                    # 020~029는 02-0 ~ 02-9 형식으로 변환
+                    if padded_number.startswith("02") and len(padded_number) == 3:
+                        display_text = f"02-{padded_number[2]}"  # "020" -> "02-0"
+                    else:
+                        display_text = padded_number
+
+                    xpath = f'//android.widget.TextView[contains(@text, "{display_text}")]'
                     find(driver, AppiumBy.XPATH, xpath, timeout=5)
                 
                 except Exception:
-                    print(f"🕹️ ❗️ {padded_number} 등록 실패 또는 시간 초과")
+                    print(f"🕹️ ❗️ {display_text} 등록 실패 또는 시간 초과")
                     break
 
     

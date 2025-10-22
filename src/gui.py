@@ -11,7 +11,7 @@ def create_gui():
     root = tk.Tk()
     root.title("Appium Script Runner")
     root.iconbitmap('./img/icon.ico')
-    root.geometry("900x650")
+    root.geometry("900x750")
   
     
     # 상태 변수들
@@ -65,7 +65,22 @@ def create_gui():
     def on_run_script():
         """스크립트 실행 버튼 핸들러"""
         nonlocal current_thread
-        
+
+        # 입력값 검증
+        try:
+            start_num = int(start_num_var.get())
+            end_num = int(end_num_var.get())
+            
+            if start_num > end_num:
+                messagebox.showwarning("⚠️ 경고", "시작 번호가 마지막 번호보다 큽니다.")
+                return
+            if start_num <= 0 or end_num <= 0:
+                messagebox.showwarning("⚠️ 경고", "1 이상의 숫자를 입력해주세요.")
+                return
+        except ValueError:
+            messagebox.showwarning("⚠️ 경고", "올바른 숫자를 입력해주세요.")
+            return
+            
         selected_display_name = script_var.get()
         if not selected_display_name:
             messagebox.showwarning("⚠️ 경고", "실행할 스크립트를 선택해주세요.")
@@ -113,6 +128,8 @@ def create_gui():
             script_filename,
             device_info['deviceName'], 
             device_info['platformVersion'],
+            start_num=start_num,
+            end_num=end_num,
             log_callback=log_message,
             finish_callback=on_finish
         )
@@ -159,7 +176,7 @@ def create_gui():
     device_label = ttk.Label(connection_frame, text="연결된 디바이스: 없음", foreground="red")
     device_label.grid(row=0, column=1, sticky=tk.W)
     
-    info_text = tk.Text(adb_frame, height=4, width=70, state='disabled', 
+    info_text = tk.Text(adb_frame, height=3, width=70, state='disabled', 
                         font= tk_font, bg='#f8f8f8')
     info_text.grid(row=1, column=0, columnspan=2, pady=(10, 0), sticky=(tk.W, tk.E))
     
@@ -180,10 +197,23 @@ def create_gui():
     
     ttk.Button(selection_frame, text="새로고침", 
               command=refresh_scripts).grid(row=0, column=2, padx=(5, 0))
+
+    range_frame = ttk.LabelFrame(main_frame, text="🔢 번호 범위 설정 (1~999)", padding="10")
+    range_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+
+    ttk.Label(range_frame, text="시작 번호:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
+    start_num_var = tk.StringVar(value="1")
+    start_entry = ttk.Entry(range_frame, textvariable=start_num_var, width=8)
+    start_entry.grid(row=0, column=1, padx=(0, 20))
+
+    ttk.Label(range_frame, text="마지막 번호:").grid(row=0, column=2, sticky=tk.W, padx=(0, 5))
+    end_num_var = tk.StringVar(value="600")
+    end_entry = ttk.Entry(range_frame, textvariable=end_num_var, width=8)
+    end_entry.grid(row=0, column=3)
     
     # 3. 실행 버튼들
     button_frame = ttk.Frame(main_frame)
-    button_frame.grid(row=2, column=0, columnspan=2, pady=(0, 10))
+    button_frame.grid(row=3, column=0, columnspan=2, pady=(0, 2))
     
     run_button = ttk.Button(button_frame, text="🚀 스크립트 실행", 
                             command=on_run_script, state='disabled')
@@ -195,9 +225,9 @@ def create_gui():
     
     # 4. 로그 출력 섹션
     log_frame = ttk.LabelFrame(main_frame, text="📋 진행 로그", padding="20")
-    log_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
+    log_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
     
-    log_text = scrolledtext.ScrolledText(log_frame, height=18, state='disabled',
+    log_text = scrolledtext.ScrolledText(log_frame, height=20, state='disabled',
                                         font= tk_font, bg="#2c2c2c", fg="#F1F1F1",
                                         insertbackground='#ffffff')
     log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))

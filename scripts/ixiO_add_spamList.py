@@ -22,6 +22,8 @@ from datetime import datetime
 def add_spam_number():
     device_name = os.environ.get('APPIUM_DEVICE_NAME')
     platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+    start_num = int(os.environ.get('START_NUM', '1'))
+    end_num = int(os.environ.get('END_NUM', '999'))
 
     if not device_name or not platform_version:
         print("❌ 디바이스 정보가 설정되지 않았습니다.")
@@ -50,7 +52,7 @@ def add_spam_number():
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # 3. 1부터 600까지 반복
-        for i in range(20,602):
+        for i in range(start_num, end_num+2):
 
                 # 세 자리 숫자로 입력
                 padded_number = f"{i:03}" 
@@ -68,8 +70,15 @@ def add_spam_number():
                 # 6. 등록버튼 선택
                 btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("등록")')
                 btn_register.click()
+ 
+                resistered_num_element =find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().textContains("/600")')
+
+                full_text = resistered_num_element.text
+                # "전체 19/600" -> ["전체 19", "600"]
+                parts = full_text.split('/')
+                current_num = int(parts[0].split()[-1])  # "전체 19"에서 19 추출
                 
-                if i >= 600:
+                if current_num >= 600:
                     try:
                         popup = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("더 이상 추가할 수 없어요")')
                         print("✅ 팝업 노출 확인:", popup.text)            

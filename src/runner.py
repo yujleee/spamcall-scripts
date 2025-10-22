@@ -106,7 +106,7 @@ def stop_running_script():
     
     return False
 
-def execute_script(script_filename, device_name, platform_version, log_callback=None, finish_callback=None):
+def execute_script(script_filename, device_name, platform_version, start_num=1, end_num=600, log_callback=None, finish_callback=None):
     """스크립트를 별도 프로세스로 실행"""
     global running_process, running_thread
     
@@ -121,6 +121,8 @@ def execute_script(script_filename, device_name, platform_version, log_callback=
             env['APPIUM_DEVICE_NAME'] = device_name
             env['APPIUM_PLATFORM_VERSION'] = platform_version
             env['PYTHONUNBUFFERED'] = '1'  # Python 출력 버퍼링 비활성화
+            env['START_NUM'] = str(start_num)
+            env['END_NUM'] = str(end_num)
             
             if log_callback:
                 log_callback(f"🚀 스크립트 시작: {script_filename}")
@@ -132,6 +134,8 @@ def execute_script(script_filename, device_name, platform_version, log_callback=
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=0,  # 버퍼 크기를 0으로 설정
+                encoding='utf-8',  # UTF-8 인코딩 명시
+                errors='replace',
                 universal_newlines=True,
                 env=env
             )

@@ -22,6 +22,8 @@ from datetime import datetime
 def add_spam_number():
     device_name = os.environ.get('APPIUM_DEVICE_NAME')
     platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+    start_num = int(os.environ.get('START_NUM', '1'))
+    end_num = int(os.environ.get('END_NUM', '999'))
 
     if not device_name or not platform_version:
         print("❌ 디바이스 정보가 설정되지 않았습니다.")
@@ -50,7 +52,7 @@ def add_spam_number():
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # 3. 1부터 600까지 반복
-        for i in range(1,602):
+        for i in range(start_num, end_num+2):
 
                 # 세 자리 숫자로 입력
                 padded_number = f"{i:03}" 
@@ -62,15 +64,21 @@ def add_spam_number():
                 # 5. 숫자 입력
                 input_field.send_keys(str(padded_number))
                 
-                # mac OS일 경우 키패드 내리기
-                if platform.system() == 'Darwin':
-                    driver.hide_keyboard()
+                if driver.capabilities['platformName'].lower() == 'android' or platform.system() == 'Darwin':
+                    driver.press_keycode(4)
 
                 # 6. 등록버튼 선택
                 btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("등록")')
                 btn_register.click()
+ 
+                resistered_num_element =find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().textContains("/600")')
+
+                full_text = resistered_num_element.text
+                # "전체 19/600" -> ["전체 19", "600"]
+                parts = full_text.split('/')
+                current_num = int(parts[0].split()[-1])  # "전체 19"에서 19 추출
                 
-                if i >= 600:
+                if current_num >= 600:
                     try:
                         popup = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("더 이상 추가할 수 없어요")')
                         print("✅ 팝업 노출 확인:", popup.text)            
@@ -86,11 +94,17 @@ def add_spam_number():
                         break 
                 
                 try:
-                    xpath = f'//android.widget.TextView[@text="{padded_number}"]'
+                    # 020~029는 02-0 ~ 02-9 형식으로 변환
+                    if padded_number.startswith("02") and len(padded_number) == 3:
+                        display_text = f"02-{padded_number[2]}"  # "020" -> "02-0"
+                    else:
+                        display_text = padded_number
+
+                    xpath = f'//android.widget.TextView[contains(@text, "{display_text}")]'
                     find(driver, AppiumBy.XPATH, xpath, timeout=5)
                 
                 except Exception:
-                    print(f"🕹️ ❗️ {padded_number} 등록 실패 또는 시간 초과")
+                    print(f"🕹️ ❗️ {display_text} 등록 실패 또는 시간 초과")
                     break
 
     

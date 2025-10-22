@@ -3,8 +3,7 @@ import threading
 import platform
 import os
 import sys
-
-from main import get_resource_path
+from pathlib import Path
 
 # 스크립트 파일명과 GUI에 표시할 이름 매핑
 SCRIPT_MAPPING = {
@@ -34,14 +33,14 @@ def auto_open_appium_terminal():
 
 def get_available_scripts():
     """사용 가능한 스크립트들을 찾아서 반환"""
-    scripts_dir = get_resource_path("scripts")
-    if not os.path.exists(scripts_dir):
+    scripts_dir = Path("scripts")
+    if not scripts_dir.exists():
         return {}
     
     available_scripts = {}
     for filename, display_name in SCRIPT_MAPPING.items():
-        script_path = os.path.join(scripts_dir, filename)
-        if os.path.exists(script_path):
+        script_path = scripts_dir / filename
+        if script_path.exists():
             available_scripts[display_name] = filename
     
     return available_scripts
@@ -115,7 +114,7 @@ def execute_script(script_filename, device_name, platform_version, log_callback=
         global running_process
         
         try:
-            script_path = get_resource_path(os.path.join("scripts", script_filename))
+            script_path = os.path.join("scripts", script_filename)
             
             # 환경변수로 디바이스 정보 전달
             env = os.environ.copy()

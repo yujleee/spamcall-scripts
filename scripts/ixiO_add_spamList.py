@@ -62,9 +62,8 @@ def add_spam_number():
                 # 5. 숫자 입력
                 input_field.send_keys(str(padded_number))
                 
-                # mac OS일 경우 키패드 내리기
-                if platform.system() == 'Darwin':
-                    driver.hide_keyboard()
+                if driver.capabilities['platformName'].lower() == 'android' or platform.system() == 'Darwin':
+                    driver.press_keycode(4)
 
                 # 6. 등록버튼 선택
                 btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("등록")')

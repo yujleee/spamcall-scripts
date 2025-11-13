@@ -10,12 +10,12 @@ from appium import webdriver
 from appium.webdriver.common.appiumby import AppiumBy
 from appium.options.android import UiAutomator2Options
 from utils.util import find
+from datetime import datetime
+
 
 # ===============================================================
 # 📱 모바일 매니저 차단 단어 관리 차단 최대 갯수(200~300개) 확인 스크립트
 # - 랜덤한 한국어 단어를 최대 갯수까지 자동으로 추가 후 최대 차단 갯수 팝업을 확인함
-# ===============================================================
-# - 최종 수정일: 2025-06-24
 # ===============================================================
 # - ✨ 실행 전 확인 사항
 # 0. 동일 폴더 내 random_korean_words.txt 파일 존재 필수!
@@ -27,6 +27,7 @@ from utils.util import find
 def add_spam_words():
     device_name = os.environ.get('APPIUM_DEVICE_NAME')
     platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+    word_count = int(os.environ.get('WORD_COUNT'))
 
     if not device_name or not platform_version:
         print("❌ 디바이스 정보가 설정되지 않았습니다.")
@@ -49,11 +50,13 @@ def add_spam_words():
     driver = webdriver.Remote("http://localhost:4723", options=options)
 
     try:
+        start_time = datetime.now()
+        print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # 차단(300)/차단하지 않을 단어(200)에 따라 숫자 카운트 선택 
         appbar_title = find(driver, AppiumBy.ID, 'lgt.call:id/appbar_title')
         appbar_title_text = appbar_title.text
-        count = 200 if appbar_title_text == '차단하지 않을 단어 관리' else 300
+        max_count = 200 if appbar_title_text == '차단하지 않을 단어 관리' else 300
 
         # 2자 이상 한국어 단어 랜덤으로 선택
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -63,7 +66,7 @@ def add_spam_words():
             words = [line.strip() for line in f if 2 <= len(line.strip())]
 
             words = list(set(words)) # 중복제거
-            selected_words = random.sample(words, min(count, len(words)))
+            selected_words = random.sample(words, min(word_count, len(words)))
 
         print(f"✅ 총 {len(selected_words)}개의 단어가 선택됨")
 
@@ -80,7 +83,7 @@ def add_spam_words():
 
             print(f"🕹️ 단어 '{word}' 등록 완료!")
             
-            time.sleep(0.5)
+            time.sleep(0.3)
             
 
         # 차단 갯수 초과 팝업 확인
@@ -88,7 +91,7 @@ def add_spam_words():
         list_size_text = list_size.text
         list_length = int(list_size_text)
 
-        if list_length == count:
+        if list_length == max_count:
 
             input_field.click()
             input_field.send_keys('팝업확인')
@@ -107,7 +110,9 @@ def add_spam_words():
             except Exception as e:
                     print(f"❌ 팝업 미노출 또는 닫기 실패: {e}")
 
-
+        end_time = datetime.now()
+        print(f"🔥 스크립트 종료: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"🔥 총 소요 시간: {end_time - start_time}")
     finally:
         driver.quit()
 

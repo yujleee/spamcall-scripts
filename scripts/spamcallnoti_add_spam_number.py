@@ -7,12 +7,11 @@ from appium import webdriver
 from appium.webdriver.common.appiumby import AppiumBy
 from appium.options.android import UiAutomator2Options
 from utils.util import find
+from datetime import datetime
 
 # ===============================================================
 # 📱 스팸전화알림 번호 직접 차단 / 차단제외 번호 설정 최대 갯수 (100개) 확인 스크립트
 # - 차단 번호 / 차단 제외 번호의 최대 갯수까지 자동으로 추가 후 최대 갯수 팝업 확인 및 새 번호 추가 확인
-# ===============================================================
-# - 최종 수정일: 2025-06-30
 # ===============================================================
 # - ✨ 실행 전 확인 사항
 # - 앱 실행 > 안심설정 > 번호 직접 차단 or 차단제외 번호 설정 진입한 후 스크립트 실행
@@ -45,6 +44,8 @@ def add_spam_number():
     driver = webdriver.Remote("http://localhost:4723", options=options)
 
     try:
+        start_time = datetime.now()
+        print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # 1부터 100까지 등록 (101은 팝업 확인용)
         for i in range(1, 102):
@@ -82,7 +83,9 @@ def add_spam_number():
                 except Exception as e:
                        print(f"❌ 팝업 미노출 또는 닫기 실패: {e}")
 
-            
+        end_time = datetime.now()
+        print(f"🔥 스크립트 종료: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"🔥 총 소요 시간: {end_time - start_time}")    
     finally:
         driver.quit()
 

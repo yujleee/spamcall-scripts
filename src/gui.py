@@ -70,12 +70,19 @@ def create_gui():
         try:
             start_num = int(start_num_var.get())
             end_num = int(end_num_var.get())
+            word_count = int(word_count_var.get())
             
             if start_num > end_num:
                 messagebox.showwarning("⚠️ 경고", "시작 번호가 마지막 번호보다 큽니다.")
                 return
             if start_num <= 0 or end_num <= 0:
                 messagebox.showwarning("⚠️ 경고", "1 이상의 숫자를 입력해주세요.")
+                return
+            if word_count <= 0:
+                messagebox.showwarning("⚠️ 경고", "추가할 단어 갯수는 1 이상의 숫자를 입력해주세요.")
+                return
+            if word_count > 300:
+                messagebox.showwarning("⚠️ 경고", "추가할 단어 갯수는 최대 300개까지 가능합니다.")
                 return
         except ValueError:
             messagebox.showwarning("⚠️ 경고", "올바른 숫자를 입력해주세요.")
@@ -130,6 +137,7 @@ def create_gui():
             device_info['platformVersion'],
             start_num=start_num,
             end_num=end_num,
+            word_count=word_count,
             log_callback=log_message,
             finish_callback=on_finish
         )
@@ -199,7 +207,7 @@ def create_gui():
               command=refresh_scripts).grid(row=0, column=2, padx=(5, 0))
 
     range_frame = ttk.LabelFrame(main_frame, text="🔢 번호 범위 설정 (1~999)", padding="10")
-    range_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+    range_frame.grid(row=2, column=0, columnspan=5, sticky=(tk.W, tk.E), pady=(0, 10))
 
     ttk.Label(range_frame, text="시작 번호:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
     start_num_var = tk.StringVar(value="1")
@@ -209,7 +217,12 @@ def create_gui():
     ttk.Label(range_frame, text="마지막 번호:").grid(row=0, column=2, sticky=tk.W, padx=(0, 5))
     end_num_var = tk.StringVar(value="600")
     end_entry = ttk.Entry(range_frame, textvariable=end_num_var, width=8)
-    end_entry.grid(row=0, column=3)
+    end_entry.grid(row=0, column=3,  padx=(0, 20))
+
+    ttk.Label(range_frame, text="추가할 단어 갯수:").grid(row=0, column=4, sticky=tk.W, padx=(0, 5))
+    word_count_var = tk.StringVar(value="200")  
+    word_count_entry = ttk.Entry(range_frame, textvariable=word_count_var, width=8) 
+    word_count_entry.grid(row=0, column=5)
     
     # 3. 실행 버튼들
     button_frame = ttk.Frame(main_frame)

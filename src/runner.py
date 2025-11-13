@@ -212,7 +212,7 @@ def run_script_as_module(script_path, log_callback=None):
             import traceback
             log_callback(traceback.format_exc())
 
-def execute_script(script_filename, device_name, platform_version, start_num=1, end_num=600, log_callback=None, finish_callback=None):
+def execute_script(script_filename, device_name, platform_version, start_num=1, end_num=600, word_count=200,log_callback=None, finish_callback=None):
     """스크립트를 별도 프로세스 또는 스레드로 실행"""
     global running_process, running_thread, script_should_stop
     
@@ -229,6 +229,7 @@ def execute_script(script_filename, device_name, platform_version, start_num=1, 
             os.environ['APPIUM_PLATFORM_VERSION'] = platform_version
             os.environ['START_NUM'] = str(start_num)
             os.environ['END_NUM'] = str(end_num)
+            os.environ['WORD_COUNT'] = str(word_count)
             
             if log_callback:
                 log_callback(f"🚀 스크립트 시작: {script_filename}")

@@ -1,4 +1,5 @@
 import platform
+import re
 import time
 import sys
 import os
@@ -22,8 +23,8 @@ from datetime import datetime
 def add_spam_number():
     device_name = os.environ.get('APPIUM_DEVICE_NAME')
     platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
-    start_num = int(os.environ.get('START_NUM', '1'))
-    end_num = int(os.environ.get('END_NUM', '999'))
+    start_num = int(os.environ.get('START_NUM'))
+    end_num = int(os.environ.get('END_NUM'))
 
     if not device_name or not platform_version:
         print("❌ 디바이스 정보가 설정되지 않았습니다.")
@@ -71,12 +72,11 @@ def add_spam_number():
                 btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("등록")')
                 btn_register.click()
  
-                resistered_num_element =find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().textContains("/600")')
+                resistered_num_element =find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().textStartsWith("전체")')
 
                 full_text = resistered_num_element.text
                 # "전체 19/600" -> ["전체 19", "600"]
-                parts = full_text.split('/')
-                current_num = int(parts[0].split()[-1])  # "전체 19"에서 19 추출
+                current_num = int(re.search(r'(\d+)/', full_text).group(1))  # "전체 19"에서 19 추출
                 
                 if current_num >= 600:
                     try:

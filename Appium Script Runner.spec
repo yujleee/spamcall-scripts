@@ -34,6 +34,7 @@ a = Analysis(
         'threading',
         'platform',
         'os',
+        're',
         'sys',
         'pathlib',
         'importlib',

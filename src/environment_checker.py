@@ -75,9 +75,95 @@ def check_command_available(command, version_flag='--version', timeout=5):
     
     return False, None
 
-def check_system_environment():
+def show_environment_check_result(check_result, parent=None):
+    """환경 체크 결과를 GUI 팝업으로 표시"""
+    if parent is None:
+        root = tk.Tk()
+        root.withdraw()
+        parent = root
+    
+    result_window = tk.Toplevel(parent)
+    result_window.title("시스템 환경 체크 결과")
+    result_window.geometry("500x400")
+    result_window.resizable(False, False)
+    result_window.transient(parent)  # 부모 창 위에 항상 표시
+    result_window.grab_set()  # 모달 대화상자로 설정
+    
+    frame = tk.Frame(result_window, padx=20, pady=20)
+    frame.pack(fill=tk.BOTH, expand=True)
+    
+    # 제목
+    title = tk.Label(frame, text="🔍 시스템 환경 체크 결과", font=(tk_font[0], 12, 'bold'))
+    title.pack(pady=(0, 15))
+    
+    # 결과 표시 영역
+    result_text = scrolledtext.ScrolledText(
+        frame,
+        width=50,
+        height=15,
+        font=tk_font,
+        bg='#f8f8f8'
+    )
+    result_text.pack(pady=(0, 15))
+    
+    # 결과 출력
+    def add_line(text, color='black'):
+        result_text.insert(tk.END, text + '\n', color)
+        
+    # 태그 설정
+    result_text.tag_configure('success', foreground='green')
+    result_text.tag_configure('error', foreground='red')
+    result_text.tag_configure('warning', foreground='orange')
+    
+    # 포터블 환경 상태
+    if check_result.get('portable_exists', False):
+        add_line("✅ 포터블 환경이 설치되어 있습니다.", 'success')
+    else:
+        add_line("❌ 포터블 실행환경이 설치되지 않았습니다.", 'error')
+    
+    add_line("\n🔍 시스템 실행환경 확인 결과:")
+    
+    # Node.js 상태
+    node_info = check_result.get('node', {})
+    if node_info.get('available'):
+        add_line(f"✅ Node.js: {node_info.get('version', 'Unknown')}", 'success')
+    else:
+        add_line("❌ Node.js: 설치되지 않음", 'error')
+    
+    # Appium 상태
+    appium_info = check_result.get('appium', {})
+    if appium_info.get('available'):
+        add_line(f"✅ Appium: {appium_info.get('version', 'Unknown')}", 'success')
+    else:
+        add_line("❌ Appium: 설치되지 않음", 'error')
+    
+    # ADB 상태
+    adb_info = check_result.get('adb', {})
+    if adb_info.get('available'):
+        add_line(f"✅ ADB: {adb_info.get('version', 'Unknown')}", 'success')
+    else:
+        add_line("❌ ADB: 설치되지 않음", 'error')
+    
+    result_text.configure(state='disabled')
+    
+    # 확인 버튼
+    tk.Button(
+        frame,
+        text="확인",
+        font=tk_font,
+        command=result_window.destroy,
+        width=20
+    ).pack(pady=(10, 0))
+    
+    # 창이 닫힐 때까지 대기
+    result_window.wait_window(result_window)
+    root.destroy()
+
+def check_system_environment(get_versions=False):
     """시스템 실행환경 확인"""
-    safe_print("🔍 시스템 실행환경 확인 중...")
+    # GUI 모드에서는 safe_print 사용 안 함
+    if not hasattr(check_system_environment, 'gui_mode'):
+        safe_print("🔍 시스템 실행환경 확인 중...")
     
     # Node.js 확인
     node_available, node_version = check_command_available('node', '--version')
@@ -113,6 +199,13 @@ def check_system_environment():
         'appium': appium_available,
         'adb': adb_available
     }
+    
+    if get_versions:
+        return {
+            'node': {'available': node_available, 'version': node_version},
+            'appium': {'available': appium_available, 'version': appium_version},
+            'adb': {'available': adb_available, 'version': adb_version.split('\n')[0] if adb_version else None}
+        }
     
     available_tools = [tool for tool, available in tools_status.items() if available]
     missing_tools = [tool for tool, available in tools_status.items() if not available]
@@ -285,11 +378,27 @@ def install_portable_environment():
         messagebox.showerror("오류", f"설치 중 오류가 발생했습니다: {e}")
         return False
 
-def check_environment_and_setup():
+def check_environment_and_setup(get_check_result=False):
     """환경 체크 및 필요시 설정 - 메인 함수"""
     
+    # 체크 결과 저장용 딕셔너리
+    check_result = {
+        'portable_exists': False,
+        'node': {'available': False, 'version': None},
+        'appium': {'available': False, 'version': None},
+        'adb': {'available': False, 'version': None}
+    }
+    
     # 1. 포터블 환경이 이미 있는지 확인
-    if check_portable_runtime():
+    portable_exists = check_portable_runtime()
+    check_result['portable_exists'] = portable_exists
+    
+    # 2. 시스템 환경 확인
+    tools_info = check_system_environment(get_versions=True)
+    check_result.update(tools_info)
+    _, available_tools, missing_tools = check_system_environment()
+    
+    if portable_exists:
         safe_print("✅ 포터블 환경이 이미 설치되어 있습니다.")
         # 포터블 환경 경로 설정
         try:
@@ -302,10 +411,18 @@ def check_environment_and_setup():
                 current_path = os.environ.get('PATH', '')
                 os.environ['PATH'] = f"{node_dir}{os.pathsep}{adb_dir}{os.pathsep}{current_path}"
                 safe_print("📁 포터블 환경 경로가 설정되었습니다.")
+                
+                # 포터블 환경의 도구 버전 정보 다시 수집
+                tools_info = check_system_environment(get_versions=True)
+                check_result.update(tools_info)
+                
         except Exception as e:
             safe_print(f"⚠️ 포터블 환경 경로 설정 실패: {e}")
-        
-        return True
+            
+        if not missing_tools:  # 모든 도구가 사용 가능한 경우
+            if get_check_result:
+                return True, check_result
+            return True
     
     # 2. 시스템 환경 확인
     tools_status, available_tools, missing_tools = check_system_environment()
@@ -330,10 +447,27 @@ def check_environment_and_setup():
     elif choice == 'system':
         safe_print("⚠️ 누락된 도구가 있지만 계속 진행합니다.")
         safe_print("💡 일부 기능이 제한될 수 있습니다.")
+        
+        # 시스템 도구의 버전 정보 수집
+        node_available, node_version = check_command_available('node', '--version')
+        check_result['node'] = {'available': node_available, 'version': node_version}
+        
+        appium_available, appium_version = check_command_available('appium', '--version')
+        check_result['appium'] = {'available': appium_available, 'version': appium_version}
+        
+        adb_available, adb_version = check_command_available('adb', 'version')
+        if adb_version:
+            adb_version = adb_version.split('\n')[0]
+        check_result['adb'] = {'available': adb_available, 'version': adb_version}
+        
+        if get_check_result:
+            return True, check_result
         return True
     
     else:
         safe_print("❌ 잘못된 선택입니다.")
+        if get_check_result:
+            return False, check_result
         return False
 
 # 단독 실행용 (테스트)

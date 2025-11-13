@@ -24,6 +24,8 @@ from utils.util import find
 def add_spam_number():
     device_name = os.environ.get('APPIUM_DEVICE_NAME')
     platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+    start_num = int(os.environ.get('START_NUM', '1'))
+    end_num = int(os.environ.get('END_NUM', '999'))
 
     if not device_name or not platform_version:
         print("❌ 디바이스 정보가 설정되지 않았습니다.")
@@ -48,8 +50,8 @@ def add_spam_number():
 
     try:
 
-        # 1부터 600까지 등록 (601은 팝업 확인용)
-        for i in range(1, 602):
+        # gui에서 설정한 시작 번호부터 끝번호+2까지 반복
+        for i in range(start_num, end_num+2):
 
             # 세 자리 숫자로 입력
             padded_number = f"{i:03}" 
@@ -62,16 +64,16 @@ def add_spam_number():
             btn_register = find(driver, AppiumBy.ID, 'lgt.call:id/spam_number_allow_block_register_button')
             btn_register.click()
 
-            if i <= 600 :
+            if i <= end_num :
                 print(f"🕹️ 번호 {i} 등록 완료!")
             
-            time.sleep(0.5)
+            time.sleep(0.3)
 
            # 차단 갯수 초과 팝업 확인
-            list_count_field = find(driver, AppiumBy, 'lgt.call:id/spam_number_block_list_count')
+            list_count_field = find(driver, AppiumBy.ID, 'lgt.call:id/spam_number_block_list_count')
             list_count = int(list_count_field.text)
 
-            if i >= list_count:
+            if list_count >= 600:
                 try:
                     popup = find(driver, AppiumBy.ID, 'lgt.call:id/title')
                     print("✅ 팝업 노출 확인:", popup.text)            

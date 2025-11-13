@@ -25,11 +25,22 @@ def check_requirements():
     
     return True
 
-def check_and_setup_environment():
+def check_and_setup_environment(root=None):
     """실행환경 체크 및 필요시 설정"""
     try:
-        from src.environment_checker import check_environment_and_setup
-        return check_environment_and_setup()
+        from src.environment_checker import (
+            check_environment_and_setup,
+            show_environment_check_result
+        )
+        
+        # 환경 설정 프로세스 실행 및 결과 얻기
+        success, check_result = check_environment_and_setup(get_check_result=True)
+        
+        # GUI로 결과 표시
+        show_environment_check_result(check_result, parent=root)
+        
+        return success
+        
     except ImportError:
         # environment_checker가 없으면 그냥 진행
         print("환경 체크 모듈을 찾을 수 없습니다. 기본 환경으로 진행합니다.")
@@ -66,7 +77,7 @@ def main():
         sys.exit(1)
     
     # 실행환경 체크 (포터블 환경 설치 등)
-    if not check_and_setup_environment():
+    if not check_and_setup_environment(root):
         sys.exit(1)
     
     # GUI 모듈 임포트 및 실행

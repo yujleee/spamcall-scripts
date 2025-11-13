@@ -4,6 +4,7 @@ import platform
 import os
 import sys
 from pathlib import Path
+import importlib.util
 
 # 스크립트 파일명과 GUI에 표시할 이름 매핑
 SCRIPT_MAPPING = {
@@ -17,6 +18,7 @@ SCRIPT_MAPPING = {
 # 실행 중인 프로세스를 관리하는 전역 변수
 running_process = None
 running_thread = None
+script_should_stop = False
 
 def auto_open_appium_terminal():
     """GUI 시작 시 자동으로 터미널 열고 appium 실행"""
@@ -86,8 +88,11 @@ def check_adb_connection():
 
 def stop_running_script():
     """실행 중인 스크립트 중지"""
-    global running_process, running_thread
+    global running_process, running_thread, script_should_stop
     
+    script_should_stop = True
+    
+    # subprocess로 실행 중인 경우 (일반 Python 환경)
     if running_process and running_process.poll() is None:
         try:
             running_process.terminate()
@@ -104,74 +109,243 @@ def stop_running_script():
             print(f"스크립트 중지 오류: {e}")
             return False
     
+    # 스레드로 실행 중인 경우 (EXE 환경)
+    if running_thread and running_thread.is_alive():
+        try:
+            # Python 스레드는 안전하게 강제 종료할 수 없으므로
+            # 프로세스 자체를 종료하는 방법 사용
+            import ctypes
+            
+            # 스레드 ID 가져오기
+            thread_id = running_thread.ident
+            
+            if thread_id is not None:
+                # 스레드에 SystemExit 예외 발생시키기 (Python 3.7+)
+                exc = SystemExit
+                res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                    ctypes.c_long(thread_id), 
+                    ctypes.py_object(exc)
+                )
+                
+                if res == 0:
+                    # 스레드 ID가 유효하지 않음
+                    print("스레드를 찾을 수 없습니다.")
+                    return False
+                elif res > 1:
+                    # 여러 스레드에 영향을 줬다면 되돌리기
+                    ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, None)
+                    print("스레드 중지 실패")
+                    return False
+                
+                print("스레드 중지 요청 완료")
+                return True
+        except Exception as e:
+            print(f"스레드 중지 오류: {e}")
+            return False
+    
     return False
 
+def run_script_as_module(script_path, log_callback=None):
+    """스크립트를 모듈로 로드하여 직접 실행 (EXE 환경용)"""
+    global script_should_stop
+    
+    try:
+        # 스크립트를 모듈로 로드
+        spec = importlib.util.spec_from_file_location("script_module", script_path)
+        script_module = importlib.util.module_from_spec(spec)
+        
+        # 원래의 print 함수를 저장
+        original_print = print
+        
+        # 커스텀 print 함수
+        def custom_print(*args, **kwargs):
+            msg = ' '.join(str(arg) for arg in args)
+            if log_callback:
+                log_callback(msg)
+            # 원본 print도 호출 (디버깅용)
+            original_print(*args, **kwargs)
+        
+        # print 함수를 커스텀 함수로 교체
+        import builtins
+        builtins.print = custom_print
+        
+        try:
+            # 모듈 로드 (import 실행)
+            spec.loader.exec_module(script_module)
+            
+            # 스크립트의 메인 함수 찾아서 실행
+            # 대부분의 스크립트가 add_spam_number, add_spam_words 등의 함수를 가지고 있음
+            main_function = None
+            
+            # 가능한 메인 함수 이름들
+            possible_names = ['add_spam_number', 'add_spam_words', 'main', 'run']
+            
+            for name in possible_names:
+                if hasattr(script_module, name):
+                    main_function = getattr(script_module, name)
+                    break
+            
+            if main_function and callable(main_function):
+                if log_callback:
+                    log_callback(f"📞 메인 함수 '{main_function.__name__}' 실행 중...")
+                main_function()
+            else:
+                # 메인 함수를 못 찾으면 __main__ 블록 실행을 시도
+                if log_callback:
+                    log_callback("⚠️ 메인 함수를 찾을 수 없습니다. 스크립트 전체를 실행합니다.")
+                
+                # __name__을 '__main__'으로 설정하고 다시 실행
+                script_module.__name__ = '__main__'
+                code = compile(open(script_path, encoding='utf-8').read(), script_path, 'exec')
+                exec(code, script_module.__dict__)
+            
+            if log_callback and not script_should_stop:
+                log_callback("🎉 스크립트가 성공적으로 완료되었습니다!")
+            
+        finally:
+            # 원래 print 함수로 복원
+            builtins.print = original_print
+            
+    except Exception as e:
+        if log_callback:
+            log_callback(f"❌ 스크립트 실행 오류: {e}")
+            import traceback
+            log_callback(traceback.format_exc())
+
 def execute_script(script_filename, device_name, platform_version, start_num=1, end_num=600, log_callback=None, finish_callback=None):
-    """스크립트를 별도 프로세스로 실행"""
-    global running_process, running_thread
+    """스크립트를 별도 프로세스 또는 스레드로 실행"""
+    global running_process, running_thread, script_should_stop
+    
+    script_should_stop = False
     
     def run_in_thread():
-        global running_process
+        global running_process, script_should_stop
         
         try:
             script_path = os.path.join("scripts", script_filename)
             
             # 환경변수로 디바이스 정보 전달
-            env = os.environ.copy()
-            env['APPIUM_DEVICE_NAME'] = device_name
-            env['APPIUM_PLATFORM_VERSION'] = platform_version
-            env['PYTHONUNBUFFERED'] = '1'  # Python 출력 버퍼링 비활성화
-            env['START_NUM'] = str(start_num)
-            env['END_NUM'] = str(end_num)
+            os.environ['APPIUM_DEVICE_NAME'] = device_name
+            os.environ['APPIUM_PLATFORM_VERSION'] = platform_version
+            os.environ['START_NUM'] = str(start_num)
+            os.environ['END_NUM'] = str(end_num)
             
             if log_callback:
                 log_callback(f"🚀 스크립트 시작: {script_filename}")
             
-            # Python 스크립트 실행 (실시간 출력을 위한 설정)
-            running_process = subprocess.Popen(
-                [sys.executable, '-u', script_path],  # -u 옵션으로 버퍼링 비활성화
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=0,  # 버퍼 크기를 0으로 설정
-                encoding='utf-8',  # UTF-8 인코딩 명시
-                errors='replace',
-                universal_newlines=True,
-                env=env
-            )
-            
-            # 실시간 로그 출력
-            while True:
-                # 프로세스가 종료되었는지 체크
-                if running_process.poll() is not None:
-                    # 남은 출력이 있는지 확인
-                    remaining_output = running_process.stdout.read()
-                    if remaining_output and log_callback:
-                        for line in remaining_output.strip().split('\n'):
-                            if line.strip():
-                                log_callback(line.strip())
-                    break
+            # EXE 패키징 환경에서는 스크립트를 직접 실행
+            if getattr(sys, 'frozen', False):
+                if log_callback:
+                    log_callback("📦 EXE 환경에서 스크립트를 직접 실행합니다.")
                 
-                # 한 줄씩 읽기
+                # 원래의 print 함수를 저장
+                original_print = print
+                
+                # 커스텀 print 함수 - GUI로 로그 전달
+                def custom_print(*args, **kwargs):
+                    msg = ' '.join(str(arg) for arg in args)
+                    if log_callback:
+                        log_callback(msg)
+                    original_print(*args, **kwargs)
+                
+                # print 함수를 커스텀 함수로 교체
+                import builtins
+                builtins.print = custom_print
+                
                 try:
-                    output = running_process.stdout.readline()
-                    if output and log_callback:
-                        log_callback(output.strip())
+                    # 스크립트 파일을 직접 실행
+                    with open(script_path, 'r', encoding='utf-8') as f:
+                        script_code = f.read()
+                    
+                    # 실행 컨텍스트 생성
+                    script_globals = {
+                        '__name__': '__main__',
+                        '__file__': script_path,
+                        'script_should_stop': lambda: script_should_stop,  # 중지 플래그 체크 함수
+                    }
+                    
+                    # 스크립트 실행
+                    exec(compile(script_code, script_path, 'exec'), script_globals)
+                    
+                    if log_callback:
+                        if script_should_stop:
+                            log_callback("⏹️ 스크립트가 사용자에 의해 중지되었습니다.")
+                        else:
+                            log_callback("🎉 스크립트가 성공적으로 완료되었습니다!")
+                    
+                except SystemExit:
+                    # 스크립트에서 sys.exit() 호출 시
+                    if log_callback:
+                        if script_should_stop:
+                            log_callback("⏹️ 스크립트가 사용자에 의해 중지되었습니다.")
+                        else:
+                            log_callback("✅ 스크립트가 종료되었습니다.")
+                
+                except KeyboardInterrupt:
+                    # Ctrl+C 또는 중단
+                    if log_callback:
+                        log_callback("⏹️ 스크립트가 중단되었습니다.")
+                
                 except Exception as e:
                     if log_callback:
-                        log_callback(f"로그 읽기 오류: {e}")
-                    break
-            
-            # 프로세스 완료 대기
-            return_code = running_process.wait()
-            
-            if log_callback:
-                if return_code == 0:
-                    log_callback("🎉 스크립트가 성공적으로 완료되었습니다!")
-                elif return_code == -15:  # SIGTERM (정상적인 중지)
-                    log_callback("⏹️ 스크립트가 사용자에 의해 중지되었습니다.")
-                else:
-                    log_callback(f"❌ 스크립트가 오류로 종료되었습니다. (종료 코드: {return_code})")
+                        log_callback(f"❌ 스크립트 실행 오류: {e}")
+                        import traceback
+                        log_callback(traceback.format_exc())
+                
+                finally:
+                    # 원래 print 함수로 복원
+                    builtins.print = original_print
+                
+            else:
+                # 일반 Python 환경에서는 subprocess 사용
+                env = os.environ.copy()
+                env['PYTHONUNBUFFERED'] = '1'
+                
+                creation_flags = 0
+                if platform.system() == 'Windows':
+                    creation_flags = subprocess.CREATE_NO_WINDOW
+                
+                running_process = subprocess.Popen(
+                    [sys.executable, '-u', script_path],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=0,
+                    encoding='utf-8',
+                    errors='replace',
+                    universal_newlines=True,
+                    env=env,
+                    creationflags=creation_flags
+                )
+                
+                # 실시간 로그 출력
+                while True:
+                    if running_process.poll() is not None:
+                        remaining_output = running_process.stdout.read()
+                        if remaining_output and log_callback:
+                            for line in remaining_output.strip().split('\n'):
+                                if line.strip():
+                                    log_callback(line.strip())
+                        break
+                    
+                    try:
+                        output = running_process.stdout.readline()
+                        if output and log_callback:
+                            log_callback(output.strip())
+                    except Exception as e:
+                        if log_callback:
+                            log_callback(f"로그 읽기 오류: {e}")
+                        break
+                
+                return_code = running_process.wait()
+                
+                if log_callback:
+                    if return_code == 0:
+                        log_callback("🎉 스크립트가 성공적으로 완료되었습니다!")
+                    elif return_code == -15:
+                        log_callback("⏹️ 스크립트가 사용자에 의해 중지되었습니다.")
+                    else:
+                        log_callback(f"❌ 스크립트가 오류로 종료되었습니다. (종료 코드: {return_code})")
             
         except Exception as e:
             if log_callback:
@@ -179,6 +353,7 @@ def execute_script(script_filename, device_name, platform_version, start_num=1, 
         
         finally:
             running_process = None
+            script_should_stop = False
             if finish_callback:
                 finish_callback()
     
@@ -197,10 +372,14 @@ def execute_script(script_filename, device_name, platform_version, start_num=1, 
 
 def is_script_running():
     """스크립트가 실행 중인지 확인"""
-    global running_process
-    return running_process is not None and running_process.poll() is None
-
-
-
-
-
+    global running_process, running_thread
+    
+    # subprocess로 실행 중인 경우
+    if running_process is not None and running_process.poll() is None:
+        return True
+    
+    # 스레드로 실행 중인 경우
+    if running_thread is not None and running_thread.is_alive():
+        return True
+    
+    return False

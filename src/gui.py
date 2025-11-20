@@ -206,7 +206,7 @@ def create_gui():
     ttk.Button(selection_frame, text="새로고침", 
               command=refresh_scripts).grid(row=0, column=2, padx=(5, 0))
 
-    range_frame = ttk.LabelFrame(main_frame, text="🔢 번호 범위 설정 (1~999)", padding="10")
+    range_frame = ttk.LabelFrame(main_frame, text="🔢 번호 및 단어 추가 범위 설정 (1~999)", padding="10")
     range_frame.grid(row=2, column=0, columnspan=5, sticky=(tk.W, tk.E), pady=(0, 10))
 
     ttk.Label(range_frame, text="시작 번호:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))

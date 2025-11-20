@@ -41,8 +41,8 @@ def add_spam_words():
         "automationName": "UiAutomator2",
         "deviceName": device_name, 
         "platformVersion": platform_version,
-        "appPackage": "lgt.call", 
-        "appActivity": "lgt.call.Main",
+        "appPackage": "com.lguplus.aicallagent",
+        "appActivity": "com.lguplus.aicallagent.MainActivity",
         "autoGrantPermissions": True,
         "noReset": True,        # 앱 데이터 초기화 방지
         "fullReset": False      # 앱 제거 후 재설치 방지

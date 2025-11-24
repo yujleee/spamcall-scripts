@@ -36,6 +36,31 @@ def check_and_setup_environment(root=None):
         # 환경 설정 프로세스 실행 및 결과 얻기
         success, check_result = check_environment_and_setup(get_check_result=True)
         
+        # 모든 도구가 정상인 경우 결과 창을 띄우지 않음
+        if not check_result.get('all_available', False):
+            # 문제가 있는 경우에만 GUI로 결과 표시
+            show_environment_check_result(check_result, parent=root)
+        
+        return success
+        
+    except ImportError:
+        # environment_checker가 없으면 그냥 진행
+        print("환경 체크 모듈을 찾을 수 없습니다. 기본 환경으로 진행합니다.")
+        return True
+    except Exception as e:
+        print(f"환경 체크 중 오류: {e}")
+        # 오류가 있어도 일단 진행 (기존처럼)
+        return True
+    """실행환경 체크 및 필요시 설정"""
+    try:
+        from src.environment_checker import (
+            check_environment_and_setup,
+            show_environment_check_result
+        )
+        
+        # 환경 설정 프로세스 실행 및 결과 얻기
+        success, check_result = check_environment_and_setup(get_check_result=True)
+        
         # GUI로 결과 표시
         show_environment_check_result(check_result, parent=root)
         

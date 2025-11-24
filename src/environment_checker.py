@@ -1,6 +1,5 @@
 """
-Appium 실행환경 체크 및 설정
-포터블 환경이 필요한지 판단하고 필요시 설치
+Appium 실행환경 체크
 """
 
 import subprocess
@@ -81,6 +80,9 @@ def show_environment_check_result(check_result, parent=None):
         root = tk.Tk()
         root.withdraw()
         parent = root
+        should_destroy_parent = True
+    else:
+        should_destroy_parent = False
     
     result_window = tk.Toplevel(parent)
     result_window.title("시스템 환경 체크 결과")
@@ -115,13 +117,7 @@ def show_environment_check_result(check_result, parent=None):
     result_text.tag_configure('error', foreground='red')
     result_text.tag_configure('warning', foreground='orange')
     
-    # 포터블 환경 상태
-    if check_result.get('portable_exists', False):
-        add_line("✅ 포터블 환경이 설치되어 있습니다.", 'success')
-    else:
-        add_line("❌ 포터블 실행환경이 설치되지 않았습니다.", 'error')
-    
-    add_line("\n🔍 시스템 실행환경 확인 결과:")
+    add_line("🔍 시스템 실행환경 확인 결과:")
     
     # Node.js 상태
     node_info = check_result.get('node', {})
@@ -157,7 +153,10 @@ def show_environment_check_result(check_result, parent=None):
     
     # 창이 닫힐 때까지 대기
     result_window.wait_window(result_window)
-    root.destroy()
+    
+    # parent가 None이었던 경우에만 destroy
+    if should_destroy_parent and hasattr(parent, 'destroy'):
+        parent.destroy()
 
 def check_system_environment(get_versions=False):
     """시스템 실행환경 확인"""
@@ -212,263 +211,136 @@ def check_system_environment(get_versions=False):
     
     return tools_status, available_tools, missing_tools
 
-def check_portable_runtime():
-    """포터블 런타임 환경 확인"""
-    try:
-        from src.setup_runtime import check_runtime_exists
-        return check_runtime_exists()
-    except ImportError:
-        return False
-    except Exception as e:
-        safe_print(f"⚠️ 포터블 환경 확인 중 오류: {e}")
-        return False
-
-def ask_user_choice(missing_tools):
-    """사용자에게 환경 설정 방법 선택 요청"""
+def show_missing_tools_dialog(missing_tools):
+    """누락된 도구를 표시하고 프로그램 종료"""
     
-    if not missing_tools:
-        # 모든 도구가 있는 경우 - 그냥 진행
-        safe_print("🎉 모든 필수 도구가 설치되어 있습니다!")
-        return 'system'
+    # 도구 설명
+    tool_descriptions = {
+        'node': 'JavaScript 런타임 환경',
+        'appium': '모바일 앱 자동화 프레임워크. node.js 선행 설치 필요.',
+        'adb': 'Android Debug Bridge'
+    }
     
-    # 일부 도구가 누락된 경우만 사용자에게 묻기
     root = tk.Tk()
     root.title("실행환경 설정")
-    root.geometry("400x250")
+    root.geometry("450x400")
     root.resizable(False, False)
     root.eval('tk::PlaceWindow . center')
     
-    choice = {"value": None}
+    main_frame = tk.Frame(root, padx=30, pady=30)
+    main_frame.pack(fill=tk.BOTH, expand=True)
     
-    def setup_ui():
-        main_frame = tk.Frame(root, padx=30, pady=30)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # 제목
-        title_label = tk.Label(
-            main_frame,
-            text="⚠️ 일부 도구가 누락됨",
-            font=tk_font,
-            fg='orange'
-        )
-        title_label.pack(pady=(0, 15))
-
-        log_area = scrolledtext.ScrolledText(
+    # 제목
+    title_label = tk.Label(
         main_frame,
-        width=50,
-        height=10,
-        font=tk_font
+        text="⚠️ 일부 도구가 누락됨",
+        font=(tk_font[0], 14, 'bold'),
+        fg='#FF9800'
     )
-        log_area.pack(pady=(0, 15), fill=tk.BOTH, expand=True)
+    title_label.pack(pady=(0, 15))
 
-        # safe_print가 log_area도 쓰도록 연결
-        set_log_widget(log_area)
-        
-        # 누락된 도구 표시
-        missing_text = f"누락된 도구: {', '.join(missing_tools)}"
-        missing_label = tk.Label(
-            main_frame,
-            text=missing_text,
-            font=tk_font,
-            fg='red'
-        )
-        missing_label.pack(pady=(0, 20))
-        
-        # 버튼들
-        btn_frame = tk.Frame(main_frame)
-        btn_frame.pack(pady=10)
-        
-        # 포터블 설치 (권장)
-        portable_btn = tk.Button(
-            btn_frame,
-            text="🚀 포터블 환경 설치 (권장)",
-            font=tk_font,
-            width=25,
-            height=2,
-            bg='#4CAF50',
-            fg='white',
-            command=lambda: set_choice('portable')
-        )
-        portable_btn.pack(pady=5)
-        
-        # 그냥 진행
-        continue_btn = tk.Button(
-            btn_frame,
-            text="⚠️ 그냥 진행 (일부 기능 제한)",
-            font=tk_font,
-            width=25,
-            height=10,
-            bg='#FF9800',
-            fg='white',
-            command=lambda: set_choice('system')
-        )
-        continue_btn.pack(pady=5)
-        
-        # 취소
-        cancel_btn = tk.Button(
-            btn_frame,
-            text="❌ 취소",
-            font=tk_font,
-            width=25,
-            height=10,
-            command=lambda: set_choice('cancel')
-        )
-        cancel_btn.pack(pady=(10, 0))
+    # 누락된 도구 상세 정보 표시 영역
+    details_frame = tk.LabelFrame(
+        main_frame,
+        text="누락된 도구 목록",
+        font=tk_font,
+        padx=10,
+        pady=10
+    )
+    details_frame.pack(pady=(0, 15), fill=tk.BOTH, expand=True)
     
-    def set_choice(value):
-        choice["value"] = value
-        root.destroy()
+    details_text = scrolledtext.ScrolledText(
+        details_frame,
+        width=45,
+        height=2,
+        font=tk_font,
+        bg='#fff5f5',
+        wrap=tk.WORD
+    )
+    details_text.pack(fill=tk.BOTH, expand=True)
     
-    setup_ui()
+    # 누락된 도구 정보 추가
+    for tool in missing_tools:
+        details_text.insert(tk.END, f"❌ {tool.upper()}\n", 'tool_name')
+        details_text.insert(tk.END, f"   상태: 설치되지 않음\n", 'status')
+        if tool in tool_descriptions:
+            details_text.insert(tk.END, f"   설명: {tool_descriptions[tool]}\n", 'desc')
+        details_text.insert(tk.END, "\n")
+    
+    # 태그 설정
+    details_text.tag_configure('tool_name', foreground='red', font=(tk_font[0], tk_font[1], 'bold'))
+    details_text.tag_configure('status', foreground='#666666')
+    details_text.tag_configure('desc', foreground='#888888')
+    
+    details_text.configure(state='disabled')
+    
+    # 안내 메시지
+    info_label = tk.Label(
+        main_frame,
+        text="위 도구들을 시스템에 설치한 후\n다시 실행해주세요.",
+        font=tk_font,
+        fg='#555555',
+        justify=tk.CENTER
+    )
+    info_label.pack(pady=(10, 20))
+    
+    # 프로그램 종료 버튼
+    exit_btn = tk.Button(
+        main_frame,
+        text="🚪 프로그램 종료",
+        font=tk_font,
+        width=30,
+        height=2,
+        bg='#f44336',
+        fg='white',
+        relief='flat',
+        borderwidth=0,
+        command=root.quit
+    )
+    exit_btn.pack(pady=(5, 0))
+    
     root.mainloop()
+    root.destroy()
     
-    return choice["value"]
-
-def install_portable_environment():
-    """포터블 환경 설치"""
-    try:
-        # 간단한 설치 진행 다이얼로그
-        from tkinter import ttk
-        
-        progress_root = tk.Tk()
-        progress_root.title("포터블 환경 설치 중...")
-        progress_root.geometry("400x150")
-        progress_root.resizable(False, False)
-        progress_root.eval('tk::PlaceWindow . center')
-        
-        main_frame = tk.Frame(progress_root, padx=20, pady=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        status_label = tk.Label(
-            main_frame,
-            text="포터블 환경을 설치하고 있습니다...",
-            font=tk_font        )
-        status_label.pack(pady=(0, 15))
-        
-        progress = ttk.Progressbar(main_frame, mode='indeterminate', length=300)
-        progress.pack(pady=(0, 15))
-        progress.start(10)
-        
-        detail_label = tk.Label(
-            main_frame,
-            text="잠시만 기다려주세요...",
-            font=tk_font,
-            fg='gray'
-        )
-        detail_label.pack()
-        
-        progress_root.update()
-        
-        # 실제 설치 실행
-        from src.setup_runtime import install_runtime
-        success = install_runtime()
-        
-        progress.stop()
-        progress_root.destroy()
-        
-        if success:
-            messagebox.showinfo("설치 완료", "포터블 환경 설치가 완료되었습니다!")
-            return True
-        else:
-            messagebox.showerror("설치 실패", "포터블 환경 설치에 실패했습니다.")
-            return False
-            
-    except Exception as e:
-        safe_print(f"설치 중 오류: {e}")
-        messagebox.showerror("오류", f"설치 중 오류가 발생했습니다: {e}")
-        return False
+    # 종료
+    safe_print("프로그램을 종료합니다.")
+    sys.exit(0)
 
 def check_environment_and_setup(get_check_result=False):
     """환경 체크 및 필요시 설정 - 메인 함수"""
     
     # 체크 결과 저장용 딕셔너리
     check_result = {
-        'portable_exists': False,
         'node': {'available': False, 'version': None},
         'appium': {'available': False, 'version': None},
-        'adb': {'available': False, 'version': None}
+        'adb': {'available': False, 'version': None},
+        'all_available': False  # 모든 도구 사용 가능 여부 플래그 추가
     }
     
-    # 1. 포터블 환경이 이미 있는지 확인
-    portable_exists = check_portable_runtime()
-    check_result['portable_exists'] = portable_exists
-    
-    # 2. 시스템 환경 확인
+    # 시스템 환경 확인
     tools_info = check_system_environment(get_versions=True)
     check_result.update(tools_info)
-    _, available_tools, missing_tools = check_system_environment()
-    
-    if portable_exists:
-        safe_print("✅ 포터블 환경이 이미 설치되어 있습니다.")
-        # 포터블 환경 경로 설정
-        try:
-            from src.setup_runtime import get_portable_executable_paths
-            from pathlib import Path
-            exe_paths = get_portable_executable_paths()
-            if exe_paths:
-                node_dir = Path(exe_paths['node']).parent
-                adb_dir = Path(exe_paths['adb']).parent
-                current_path = os.environ.get('PATH', '')
-                os.environ['PATH'] = f"{node_dir}{os.pathsep}{adb_dir}{os.pathsep}{current_path}"
-                safe_print("📁 포터블 환경 경로가 설정되었습니다.")
-                
-                # 포터블 환경의 도구 버전 정보 다시 수집
-                tools_info = check_system_environment(get_versions=True)
-                check_result.update(tools_info)
-                
-        except Exception as e:
-            safe_print(f"⚠️ 포터블 환경 경로 설정 실패: {e}")
-            
-        if not missing_tools:  # 모든 도구가 사용 가능한 경우
-            if get_check_result:
-                return True, check_result
-            return True
-    
-    # 2. 시스템 환경 확인
     tools_status, available_tools, missing_tools = check_system_environment()
     
     if not missing_tools:
         # 모든 도구가 있으면 그냥 진행
-        return True
-    
-    # 3. 일부 도구가 누락된 경우 사용자에게 선택 요청
-    safe_print(f"⚠️ 누락된 도구: {', '.join(missing_tools)}")
-    
-    choice = ask_user_choice(missing_tools)
-    
-    if choice == 'cancel':
-        safe_print("사용자가 취소했습니다.")
-        return False
-    
-    elif choice == 'portable':
-        safe_print("🚀 포터블 환경을 설치합니다...")
-        return install_portable_environment()
-    
-    elif choice == 'system':
-        safe_print("⚠️ 누락된 도구가 있지만 계속 진행합니다.")
-        safe_print("💡 일부 기능이 제한될 수 있습니다.")
-        
-        # 시스템 도구의 버전 정보 수집
-        node_available, node_version = check_command_available('node', '--version')
-        check_result['node'] = {'available': node_available, 'version': node_version}
-        
-        appium_available, appium_version = check_command_available('appium', '--version')
-        check_result['appium'] = {'available': appium_available, 'version': appium_version}
-        
-        adb_available, adb_version = check_command_available('adb', 'version')
-        if adb_version:
-            adb_version = adb_version.split('\n')[0]
-        check_result['adb'] = {'available': adb_available, 'version': adb_version}
-        
+        safe_print("🎉 모든 필수 도구가 설치되어 있습니다!")
+        check_result['all_available'] = True
         if get_check_result:
             return True, check_result
         return True
     
-    else:
-        safe_print("❌ 잘못된 선택입니다.")
-        if get_check_result:
-            return False, check_result
-        return False
+    # 일부 도구가 누락된 경우
+    safe_print(f"⚠️ 누락된 도구: {', '.join(missing_tools)}")
+    check_result['all_available'] = False
+    
+    # GUI로 누락된 도구 표시 후 프로그램 종료
+    show_missing_tools_dialog(missing_tools)
+    
+    # 여기까지 오지 않음 (show_missing_tools_dialog에서 sys.exit 호출)
+    if get_check_result:
+        return False, check_result
+    return False
 
 # 단독 실행용 (테스트)
 if __name__ == "__main__":

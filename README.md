@@ -97,82 +97,9 @@ cmd + shift + p > pyhton interpreter 선택 하면 어떤 파이썬 버전으로
 
 ## 📦 스크립트 다운로드 및 환경 설정
 
-### 4. 스크립트 다운로드
+### 4. 스크립트 다운로드 (현재 윈도우만 가능)
 
 GitHub Repository에서 Code > Download Zip 클릭하여 다운로드
-또는 Git을 아는 경우:
 
-`git clone [레포주소]`
+spamcall-scripts 폴더 안에서 `Appium Script Runner.exe` 파일 실행 (초기 실행 시간이 조금 소요될 수 있습니다.)
 
-### 5. 패키지 설치
-
-VSCode를 열고, Ctrl + ~ 로 터미널을 열어 아래 명령어 입력:
-
-`pip install -r requirements.txt`
-
-<br>
-<br>
-
-## 📱 AOS 단말 연결 및 실행
-
-### 6. AOS 단말기와 PC 연결 (USB 케이블)
-
-단말에서 개발자 옵션 > USB 디버깅 활성화 필수
-
-<br>
-<br>
-
-### 7. 단말기 확인
-
-터미널에서 다음 명령어 입력:
-
-`adb devices`
-입력 후 나오는 단말기 ID 값을 기억해두세요. (예: R3CX20TEEMV)
-
-<br>
-<br>
-
-## ⚙️ 스크립트 설정 (기기 정보 변경)
-
-### 8. deviceName과 OS 버전 설정
-
-add_spam_number() 함수 안의 caps 값 중 아래 부분 수정:
-
-```python
-"deviceName": "R3CX20TEEMV",  # 7번에서 확인한 단말기 ID 입력
-"platformVersion": "14",      # 단말의 Android OS 버전에 맞게 수정
-```
-
-<br>
-<br>
-
-## 🚀 실행
-
-### 9. Appium 서버 실행
-
-(win) 관리자 권한으로 cmd 실행
-(mac) 터미널 실행 후:
-
-`appium`
-"Appium REST http interface listener started..." 메시지가 뜨면 성공
-
-### 10. VSCode에서 스크립트 실행
-
--   \*.py 파일 열기
-
-| 서비스                   | 파일명                           |
-| ------------------------ | -------------------------------- |
-| 익시오                   | ixiO_add_spamList.py             |
-| 모바일매니저 > 스팸 번호 | mobileManager_add_spam_number.py |
-| 모바일매니저 > 스팸 단어 | mobileManager_add_spam_words.py  |
-| 스팸전화알림             | spamcallnoti_add_spam_number.py  |
-
--   (win) 우측 상단의 ▶️ (Run Python File) 버튼 클릭
--   (mac) vscode 내 터미널에서 `python3 ./add_spam_number_and_words/파일명.py` 입력
-
-<br>
-<br>
-
-### 📝 기타
-
--   터미널에 등록완료 로그가 실시간 출력됩니다. 문제가 발생하면 자동으로 중단되고 로그가 표시됩니다.

@@ -320,8 +320,8 @@ def check_environment_and_setup(get_check_result=False):
     # 시스템 환경 확인
     tools_info = check_system_environment(get_versions=True)
     check_result.update(tools_info)
-    tools_status, available_tools, missing_tools = check_system_environment()
-    
+    missing_tools = [tool for tool, info in tools_info.items() if not info.get('available')]
+
     if not missing_tools:
         # 모든 도구가 있으면 그냥 진행
         safe_print("🎉 모든 필수 도구가 설치되어 있습니다!")

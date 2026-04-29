@@ -1,4 +1,5 @@
 import os
+import queue
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from src.runner import get_available_scripts, check_adb_connection, execute_script, stop_running_script, auto_open_appium_terminal
@@ -10,23 +11,36 @@ def create_gui():
     """GUI 생성 및 실행"""
     root = tk.Tk()
     root.title("Appium Script Runner")
-    root.iconbitmap('./img/icon.ico')
+    try:
+        root.iconbitmap('./img/icon.ico')
+    except Exception:
+        pass
     root.geometry("900x750")
-  
-    
+
+
     # 상태 변수들
     device_info = {}
     current_thread = None
     available_scripts = get_available_scripts()
     tk_font = get_log_font()
-    
+    _log_queue = queue.Queue()
+
+    def _process_log_queue():
+        """메인 스레드에서 큐에 쌓인 로그를 처리"""
+        while True:
+            try:
+                message = _log_queue.get_nowait()
+                log_text.config(state='normal')
+                log_text.insert(tk.END, f"{message}\n")
+                log_text.see(tk.END)
+                log_text.config(state='disabled')
+            except queue.Empty:
+                break
+        root.after(50, _process_log_queue)
+
     def log_message(message):
-        """로그 텍스트 위젯에 메시지 추가"""
-        log_text.config(state='normal')
-        log_text.insert(tk.END, f"{message}\n")
-        log_text.see(tk.END)
-        log_text.config(state='disabled')
-        root.update()
+        """로그 메시지를 큐에 추가 (스레드 안전)"""
+        _log_queue.put(message)
     
     def on_check_connection():
         """ADB 연결 확인 버튼 핸들러"""
@@ -126,10 +140,12 @@ def create_gui():
         
         # 스크립트 실행
         def on_finish():
-            run_button.config(state='normal')
-            stop_button.config(state='disabled')
-            script_combo.config(state='readonly')
-            log_message("=" * 60)
+            def _on_finish_ui():
+                run_button.config(state='normal')
+                stop_button.config(state='disabled')
+                script_combo.config(state='readonly')
+                log_message("=" * 60)
+            root.after(0, _on_finish_ui)
         
         current_thread = execute_script(
             script_filename,
@@ -270,7 +286,8 @@ def create_gui():
     log_message("=" * 60)
     
     refresh_scripts()
-    
+
+    root.after(50, _process_log_queue)
     root.after(1000, auto_open_appium_terminal)
 
     root.mainloop()

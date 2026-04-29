@@ -28,19 +28,14 @@ def check_requirements():
 def check_and_setup_environment(root=None):
     """실행환경 체크 및 필요시 설정"""
     try:
-        from src.environment_checker import (
-            check_environment_and_setup,
-            show_environment_check_result
-        )
-        
-        # 환경 설정 프로세스 실행 및 결과 얻기
+        from src.core.environment import check_environment_and_setup
+        from src.gui.dialogs import show_environment_check_result
+
         success, check_result = check_environment_and_setup(get_check_result=True)
-        
-        # 모든 도구가 정상인 경우 결과 창을 띄우지 않음
+
         if not check_result.get('all_available', False):
-            # 문제가 있는 경우에만 GUI로 결과 표시
             show_environment_check_result(check_result, parent=root)
-        
+
         return success
 
     except ImportError:

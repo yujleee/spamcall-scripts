@@ -1,4 +1,3 @@
-import platform
 import re
 import time
 import sys
@@ -10,6 +9,7 @@ sys.path.insert(0, BASE_DIR)
 from appium import webdriver
 from appium.webdriver.common.appiumby import AppiumBy
 from appium.options.android import UiAutomator2Options
+from appium.options.ios import XCUITestOptions
 from utils.util import find
 from datetime import datetime
 
@@ -23,6 +23,7 @@ from datetime import datetime
 def add_spam_number():
     device_name = os.environ.get('APPIUM_DEVICE_NAME')
     platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+    platform_name = os.environ.get('APPIUM_PLATFORM_NAME', 'android').lower()
     start_num = int(os.environ.get('START_NUM'))
     end_num = int(os.environ.get('END_NUM'))
 
@@ -31,89 +32,113 @@ def add_spam_number():
         print("GUI에서 실행해주세요.")
         sys.exit(1)
 
-    caps = {
-        "platformName": "Android",
-        "automationName": "UiAutomator2",
-        "deviceName": device_name,
-        "platformVersion": platform_version,
-        "appPackage": "com.lguplus.aicallagent",
-        "appActivity": "com.lguplus.aicallagent.MainActivity",
-        "autoGrantPermissions": True,
-        "noReset": True,        # 앱 데이터 초기화 방지
-        "fullReset": False      # 앱 제거 후 재설치 방지
-    }
+    is_ios = platform_name == 'ios'
 
-    options = UiAutomator2Options().load_capabilities(caps)
+    if is_ios:
+        caps = {
+            "platformName": "iOS",
+            "automationName": "XCUITest",
+            "deviceName": device_name,
+            "platformVersion": platform_version,
+            "bundleId": "com.lguplus.aicallagent",
+            "noReset": True,
+            "fullReset": False,
+        }
+        options = XCUITestOptions().load_capabilities(caps)
+    else:
+        caps = {
+            "platformName": "Android",
+            "automationName": "UiAutomator2",
+            "deviceName": device_name,
+            "platformVersion": platform_version,
+            "appPackage": "com.lguplus.aicallagent",
+            "appActivity": "com.lguplus.aicallagent.MainActivity",
+            "autoGrantPermissions": True,
+            "noReset": True,
+            "fullReset": False,
+        }
+        options = UiAutomator2Options().load_capabilities(caps)
 
     driver = webdriver.Remote("http://localhost:4723", options=options)
 
     try:
-        
         start_time = datetime.now()
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-        # 3. 1부터 600까지 반복
-        for i in range(start_num, end_num+2):
+        for i in range(start_num, end_num + 2):
+            padded_number = f"{i:03}"
 
-                # 세 자리 숫자로 입력
-                padded_number = f"{i:03}" 
+            if is_ios:
+                input_field = find(driver, AppiumBy.CLASS_NAME, 'XCUIElementTypeTextField')
+            else:
+                input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                                   'new UiSelector().className("android.widget.EditText").instance(0)')
+            input_field.click()
+            input_field.send_keys(str(padded_number))
 
-                # 4. 꼭 받아야 할 전화번호를 입력하세요 텍스트 필드 선택
-                input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().className("android.widget.EditText").instance(0)')
-                input_field.click()
+            # 키보드 닫기
+            if is_ios:
+                driver.hide_keyboard()
+            else:
+                driver.press_keycode(4)
 
-                # 5. 숫자 입력
-                input_field.send_keys(str(padded_number))
-                
-                if driver.capabilities['platformName'].lower() == 'android' or platform.system() == 'Darwin':
-                    driver.press_keycode(4)
+            if is_ios:
+                btn_register = find(driver, AppiumBy.XPATH, '//XCUIElementTypeButton[@name="등록"]')
+            else:
+                btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                                    'new UiSelector().text("등록")')
+            btn_register.click()
 
-                # 6. 등록버튼 선택
-                btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("등록")')
-                btn_register.click()
- 
-                resistered_num_element =find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().textStartsWith("전체")')
+            if is_ios:
+                registered_num_element = find(driver, AppiumBy.IOS_PREDICATE_STRING,
+                                              'label BEGINSWITH "전체"')
+            else:
+                registered_num_element = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                                              'new UiSelector().textStartsWith("전체")')
 
-                full_text = resistered_num_element.text
-                # "전체 19/600" -> ["전체 19", "600"]
-                current_num = int(re.search(r'(\d+)/', full_text).group(1))  # "전체 19"에서 19 추출
-                
-                if current_num >= 600:
-                    try:
-                        popup = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("더 이상 추가할 수 없어요")')
-                        print("✅ 팝업 노출 확인:", popup.text)            
-                    
-                        btn_popupClose = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("확인")')
-                        btn_popupClose.click()
+            full_text = registered_num_element.text
+            current_num = int(re.search(r'(\d+)/', full_text).group(1))
 
-                        print("✅ 팝업 닫기 완료! 스크립트 실행 끝!")
-                        break
-
-                    except Exception as e:
-                        print(f"❌ 팝업 미노출 또는 닫기 실패: {e}")
-                        break 
-                
+            if current_num >= 600:
                 try:
-                    # 020~029는 02-0 ~ 02-9 형식으로 변환
-                    if padded_number.startswith("02") and len(padded_number) == 3:
-                        display_text = f"02-{padded_number[2]}"  # "020" -> "02-0"
+                    if is_ios:
+                        popup = find(driver, AppiumBy.ACCESSIBILITY_ID, '더 이상 추가할 수 없어요')
+                        print("✅ 팝업 노출 확인:", popup.text)
+                        btn_popup_close = find(driver, AppiumBy.XPATH,
+                                               '//XCUIElementTypeButton[@name="확인"]')
                     else:
-                        display_text = padded_number
+                        popup = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                                     'new UiSelector().text("더 이상 추가할 수 없어요")')
+                        print("✅ 팝업 노출 확인:", popup.text)
+                        btn_popup_close = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                                               'new UiSelector().text("확인")')
+                    btn_popup_close.click()
+                    print("✅ 팝업 닫기 완료! 스크립트 실행 끝!")
 
+                except Exception as e:
+                    print(f"❌ 팝업 미노출 또는 닫기 실패: {e}")
+                break
+
+            try:
+                if padded_number.startswith("02") and len(padded_number) == 3:
+                    display_text = f"02-{padded_number[2]}"
+                else:
+                    display_text = padded_number
+
+                if is_ios:
+                    find(driver, AppiumBy.IOS_PREDICATE_STRING,
+                         f'label CONTAINS "{display_text}"', timeout=5)
+                else:
                     xpath = f'//android.widget.TextView[contains(@text, "{display_text}")]'
                     find(driver, AppiumBy.XPATH, xpath, timeout=5)
-                
-                except Exception:
-                    print(f"🕹️ ❗️ {display_text} 등록 실패 또는 시간 초과")
-                    break
 
-    
-                print(f"  스팸번호 {i} 등록 완료")
-                time.sleep(0.5)
+            except Exception:
+                print(f"🕹️ ❗️ {display_text} 등록 실패 또는 시간 초과")
+                break
 
-            
-        
-        # 종료 시각 및 소요 시간 기록
+            print(f"  스팸번호 {i} 등록 완료")
+            time.sleep(0.5)
+
         end_time = datetime.now()
         print(f"🔥 스크립트 종료: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"🔥 총 소요 시간: {end_time - start_time}")
@@ -121,5 +146,6 @@ def add_spam_number():
     finally:
         driver.quit()
 
+
 if __name__ == "__main__":
-   add_spam_number()
+    add_spam_number()

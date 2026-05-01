@@ -10,6 +10,7 @@ sys.path.insert(0, BASE_DIR)
 from appium import webdriver
 from appium.webdriver.common.appiumby import AppiumBy
 from appium.options.android import UiAutomator2Options
+from appium.options.ios import XCUITestOptions
 from utils.util import find
 from datetime import datetime
 
@@ -22,13 +23,13 @@ from datetime import datetime
 # - ✨ 실행 전 확인 사항
 # 0. 동일 폴더 내 random_korean_words.txt 파일 존재 필수!
 # 1. 앱 실행 > 설정 > 스팸 차단/예외 설정 > 차단 단어 관리 or 차단하지 않을 단어 관리 진입 후 스크립트 실행
-        
 
 
 
 def add_spam_words():
     device_name = os.environ.get('APPIUM_DEVICE_NAME')
     platform_version = os.environ.get('APPIUM_PLATFORM_VERSION')
+    platform_name = os.environ.get('APPIUM_PLATFORM_NAME', 'android').lower()
     word_count = int(os.environ.get('WORD_COUNT'))
 
     if not device_name or not platform_version:
@@ -36,19 +37,33 @@ def add_spam_words():
         print("GUI에서 실행해주세요.")
         sys.exit(1)
 
-    caps = {
-        "platformName": "Android",
-        "automationName": "UiAutomator2",
-        "deviceName": device_name, 
-        "platformVersion": platform_version,
-        "appPackage": "com.lguplus.aicallagent",
-        "appActivity": "com.lguplus.aicallagent.MainActivity",
-        "autoGrantPermissions": True,
-        "noReset": True,        # 앱 데이터 초기화 방지
-        "fullReset": False      # 앱 제거 후 재설치 방지
-    }
+    is_ios = platform_name == 'ios'
 
-    options = UiAutomator2Options().load_capabilities(caps)
+    if is_ios:
+        caps = {
+            "platformName": "iOS",
+            "automationName": "XCUITest",
+            "deviceName": device_name,
+            "platformVersion": platform_version,
+            "bundleId": "com.lguplus.aicallagent",  
+            "noReset": True,        # 앱 데이터 초기화 방지
+            "fullReset": False      # 앱 제거 후 재설치 방지
+        }
+        options = XCUITestOptions().load_capabilities(caps)
+    else:
+        caps = {
+            "platformName": "Android",
+            "automationName": "UiAutomator2",
+            "deviceName": device_name,
+            "platformVersion": platform_version,
+            "appPackage": "com.lguplus.aicallagent",
+            "appActivity": "com.lguplus.aicallagent.MainActivity",
+            "autoGrantPermissions": True,
+            "noReset": True,        # 앱 데이터 초기화 방지
+            "fullReset": False      # 앱 제거 후 재설치 방지
+        }
+        options = UiAutomator2Options().load_capabilities(caps)
+
     driver = webdriver.Remote("http://localhost:4723", options=options)
 
     try:
@@ -56,10 +71,13 @@ def add_spam_words():
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 
-        # 차단(300)/차단하지 않을 단어(200)에 따라 숫자 카운트 선택 
+        # 차단(300)/차단하지 않을 단어(200)에 따라 숫자 카운트 선택
         # 두 요소 중 어느 것이 존재하는지 확인
         try:
-            find(driver, AppiumBy.XPATH, '//android.widget.TextView[@text="차단하지 않을 단어"]')
+            if is_ios:
+                find(driver, AppiumBy.XPATH, '//XCUIElementTypeStaticText[@name="차단하지 않을 단어"]')
+            else:
+                find(driver, AppiumBy.XPATH, '//android.widget.TextView[@text="차단하지 않을 단어"]')
             max_count = 200  # 차단하지 않을 단어
         except:
             max_count = 300  # 차단할 단어 (기본값)
@@ -80,21 +98,30 @@ def add_spam_words():
         # 단어 추가 루프
         for word in selected_words:
 
-            input_field = find(driver, AppiumBy.CLASS_NAME, 'android.widget.EditText')
+            if is_ios:
+                input_field = find(driver, AppiumBy.CLASS_NAME, 'XCUIElementTypeTextField')
+            else:
+                input_field = find(driver, AppiumBy.CLASS_NAME, 'android.widget.EditText')
             input_field.click()
 
             input_field.send_keys(word)
 
-            btn_register = find(driver, AppiumBy.XPATH, '//android.widget.TextView[@text="추가"]')
+            if is_ios:
+                btn_register = find(driver, AppiumBy.XPATH, '//XCUIElementTypeButton[@name="추가"]')
+            else:
+                btn_register = find(driver, AppiumBy.XPATH, '//android.widget.TextView[@text="추가"]')
             btn_register.click()
 
             print(f"🕹️ 단어 '{word}' 등록 완료!")
-            
+
             time.sleep(0.5)
-            
+
 
         # 차단 갯수 초과 팝업 확인
-        list_size = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().textStartsWith("전체")')
+        if is_ios:
+            list_size = find(driver, AppiumBy.IOS_PREDICATE_STRING, 'label BEGINSWITH "전체"')
+        else:
+            list_size = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().textStartsWith("전체")')
         list_size_text = list_size.text
         list_length = int(re.search(r'(\d+)/', list_size_text).group(1))
         print(f"현재 등록된 단어 갯수: {list_length}")
@@ -105,18 +132,25 @@ def add_spam_words():
             input_field.send_keys('팝업확인')
 
             btn_register.click()
-                        
+
             try:
-                popup = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("더 이상 추가할 수 없어요")')
-                print("✅ 팝업 노출 확인:", popup.text)            
-            
-                btn_popupClose = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().className("android.view.View").instance(3)')
-                btn_popupClose.click()
+                if is_ios:
+                    popup = find(driver, AppiumBy.ACCESSIBILITY_ID, '더 이상 추가할 수 없어요')
+                    print("✅ 팝업 노출 확인:", popup.text)
+
+                    btn_popupClose = find(driver, AppiumBy.XPATH, '//XCUIElementTypeButton[@name="확인"]')
+                    btn_popupClose.click()
+                else:
+                    popup = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("더 이상 추가할 수 없어요")')
+                    print("✅ 팝업 노출 확인:", popup.text)
+
+                    btn_popupClose = find(driver, AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().className("android.view.View").instance(3)')
+                    btn_popupClose.click()
 
                 print("✅ 팝업 닫기 완료! 스크립트 실행 끝!")
 
             except Exception as e:
-                    print(f"❌ 팝업 미노출 또는 닫기 실패: {e}")
+                print(f"❌ 팝업 미노출 또는 닫기 실패: {e}")
 
         # 종료 시각 및 소요 시간 기록
         end_time = datetime.now()

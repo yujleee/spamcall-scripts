@@ -105,6 +105,7 @@ def execute_script(
     script_filename,
     device_name,
     platform_version,
+    platform_name="android",
     start_num=1,
     end_num=600,
     word_count=200,
@@ -124,6 +125,7 @@ def execute_script(
 
             os.environ['APPIUM_DEVICE_NAME'] = device_name
             os.environ['APPIUM_PLATFORM_VERSION'] = platform_version
+            os.environ['APPIUM_PLATFORM_NAME'] = platform_name
             os.environ['START_NUM'] = str(start_num)
             os.environ['END_NUM'] = str(end_num)
             os.environ['WORD_COUNT'] = str(word_count)

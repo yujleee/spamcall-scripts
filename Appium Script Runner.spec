@@ -48,6 +48,7 @@ a = Analysis(
         'appium.webdriver.common.appiumby',
         'appium.options',
         'appium.options.android',
+        'appium.options.ios',
         # tkinter
         'tkinter',
         'tkinter.ttk',

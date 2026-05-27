@@ -24,13 +24,20 @@ def setup_unicode_environment():
 
 def get_runtime_paths():
     """OS별 런타임 경로 반환"""
+    system = platform.system().lower()
+
     if getattr(sys, 'frozen', False):
-        base_dir = Path(sys.executable).parent
+        # 앱 번들은 읽기 전용이므로 사용자 데이터 디렉토리에 런타임 저장
+        if system == "darwin":
+            base_dir = Path.home() / "Library" / "Application Support" / "AppiumScriptRunner"
+        elif system == "windows":
+            base_dir = Path(os.environ.get("APPDATA", str(Path.home()))) / "AppiumScriptRunner"
+        else:
+            base_dir = Path.home() / ".appium-script-runner"
     else:
         base_dir = Path(__file__).parent.parent.parent
 
     runtime_dir = base_dir / "runtime"
-    system = platform.system().lower()
 
     if system == "windows":
         os_dir = runtime_dir / "windows"

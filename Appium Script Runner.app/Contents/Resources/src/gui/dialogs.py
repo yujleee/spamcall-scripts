@@ -1,4 +1,6 @@
+import queue
 import sys
+import threading
 import tkinter as tk
 from tkinter import scrolledtext
 from utils.font import get_log_font
@@ -142,3 +144,96 @@ def show_missing_tools_dialog(missing_tools):
     root.mainloop()
     root.destroy()
     sys.exit(0)
+
+
+def show_runtime_install_dialog():
+    """포터블 런타임 다운로드/설치 진행 다이얼로그. 설치 성공 여부 반환."""
+    result = [False]
+    log_queue = queue.Queue()
+
+    dialog = tk.Tk()
+    dialog.title("포터블 환경 설치")
+    dialog.geometry("520x430")
+    dialog.resizable(False, False)
+    dialog.eval('tk::PlaceWindow . center')
+
+    main_frame = tk.Frame(dialog, padx=20, pady=20)
+    main_frame.pack(fill=tk.BOTH, expand=True)
+
+    tk.Label(
+        main_frame,
+        text="📦 포터블 실행환경 설치",
+        font=(tk_font[0], 14, 'bold'),
+    ).pack(pady=(0, 8))
+
+    tk.Label(
+        main_frame,
+        text="Node.js · Appium · ADB를 자동으로 다운로드합니다.\n인터넷 연결이 필요하며 수 분이 소요될 수 있습니다.",
+        font=tk_font,
+        fg='#555555',
+        justify=tk.CENTER,
+    ).pack(pady=(0, 12))
+
+    log_text = scrolledtext.ScrolledText(
+        main_frame, height=12, font=tk_font,
+        bg='#2c2c2c', fg='#f1f1f1', state='disabled',
+    )
+    log_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+    status_label = tk.Label(main_frame, text="설치 준비 중...", font=tk_font, fg='#FF9800')
+    status_label.pack()
+
+    close_btn_frame = tk.Frame(main_frame, bg='#888888', cursor='hand2')
+    close_btn_frame.pack(pady=(8, 0))
+    close_btn_label = tk.Label(
+        close_btn_frame, text="닫기", font=(tk_font[0], tk_font[1], 'bold'),
+        bg='#888888', fg='white', padx=40, pady=10, cursor='hand2',
+    )
+    close_btn_label.pack()
+
+    def _close(e=None):
+        dialog.destroy()
+
+    for w in (close_btn_frame, close_btn_label):
+        w.bind('<Button-1>', _close)
+
+    def _process_queue():
+        while True:
+            try:
+                msg = log_queue.get_nowait()
+                log_text.config(state='normal')
+                log_text.insert(tk.END, msg + '\n')
+                log_text.see(tk.END)
+                log_text.config(state='disabled')
+            except queue.Empty:
+                break
+        if dialog.winfo_exists():
+            dialog.after(100, _process_queue)
+
+    def _run_install():
+        import utils.safe_print as sp
+        original_safe_print = sp.safe_print
+        sp.safe_print = log_queue.put
+        try:
+            from src.core.runtime import install_runtime
+            result[0] = install_runtime()
+        finally:
+            sp.safe_print = original_safe_print
+
+        if not dialog.winfo_exists():
+            return
+        if result[0]:
+            dialog.after(0, lambda: status_label.config(text="✅ 설치 완료!", fg='green'))
+            dialog.after(0, lambda: close_btn_frame.config(bg='#4CAF50'))
+            dialog.after(0, lambda: close_btn_label.config(bg='#4CAF50', text="완료 — 닫기"))
+        else:
+            dialog.after(0, lambda: status_label.config(
+                text="❌ 설치 실패. 인터넷 연결을 확인하세요.", fg='red'))
+            dialog.after(0, lambda: close_btn_frame.config(bg='#f44336'))
+            dialog.after(0, lambda: close_btn_label.config(bg='#f44336', text="닫기"))
+
+    dialog.after(100, _process_queue)
+    threading.Thread(target=_run_install, daemon=True).start()
+
+    dialog.mainloop()
+    return result[0]

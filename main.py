@@ -47,7 +47,12 @@ def check_and_setup_environment(root=None):
 
 def main():
     """메인 실행 함수"""
-    
+
+    # 패키징 환경에서 작업 디렉토리를 데이터 파일 위치로 고정
+    # .app 번들: Contents/Resources/, _internal 빌드: _internal/
+    if getattr(sys, 'frozen', False):
+        os.chdir(getattr(sys, '_MEIPASS', os.path.dirname(sys.executable)))
+
     # 콘솔창 숨기기 (exe 패키징 시 유용)
     if hasattr(sys, 'frozen'):
         try:

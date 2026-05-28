@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_dynamic_libs, collect_all, collect_submodules
 import os
 import sys
 
@@ -14,10 +14,9 @@ if sys.platform == 'win32':
             if file.lower().endswith('.dll'):
                 additional_binaries.append((os.path.join(dll_path, file), '.'))
 
-try:
-    additional_binaries += collect_dynamic_libs('appium')
-except Exception:
-    pass
+# appium 패키지 전체 수집
+appium_datas, appium_binaries, appium_hiddenimports = collect_all('appium')
+additional_binaries += appium_binaries
 
 a = Analysis(
     ['main.py'],
@@ -28,7 +27,7 @@ a = Analysis(
         ('src', 'src'),
         ('utils', 'utils'),
         ('img', 'img'),
-    ],
+    ] + appium_datas,
     hiddenimports=[
         # 앱 서브모듈
         'src.core.environment',
@@ -42,13 +41,6 @@ a = Analysis(
         'utils.safe_print',
         'utils.font',
         'utils.util',
-        # Appium
-        'appium',
-        'appium.webdriver',
-        'appium.webdriver.common.appiumby',
-        'appium.options',
-        'appium.options.android',
-        'appium.options.ios',
         # tkinter
         'tkinter',
         'tkinter.ttk',
@@ -68,32 +60,29 @@ a = Analysis(
         'urllib.request',
         'urllib.error',
         'ctypes',
-    ],
+    ] + appium_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
-    optimize=0,
+    optimize=2,
 )
 
 pyz = PYZ(a.pure)
 
-# ── Windows: 단일 .exe ──────────────────────────────────────────
+# ── Windows: one-dir 모드 ───────────────────────────────────────
 if sys.platform == 'win32':
-    EXE(
+    exe = EXE(
         pyz,
         a.scripts,
-        a.binaries,
-        a.datas,
         [],
+        exclude_binaries=True,
         name='Appium Script Runner',
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
-        upx=True,
-        upx_exclude=[],
-        runtime_tmpdir=None,
+        upx=False,
         console=False,
         disable_windowed_traceback=False,
         argv_emulation=False,
@@ -101,6 +90,16 @@ if sys.platform == 'win32':
         codesign_identity=None,
         entitlements_file=None,
         icon=os.path.join('img', 'icon.ico'),
+    )
+
+    COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        strip=False,
+        upx=False,
+        upx_exclude=[],
+        name='Appium Script Runner',
     )
 
 # ── macOS: .app 번들 ────────────────────────────────────────────
@@ -114,7 +113,7 @@ else:
         debug=False,
         bootloader_ignore_signals=False,
         strip=False,
-        upx=True,
+        upx=False,
         console=False,
         disable_windowed_traceback=False,
         argv_emulation=False,
@@ -129,7 +128,7 @@ else:
         a.binaries,
         a.datas,
         strip=False,
-        upx=True,
+        upx=False,
         upx_exclude=[],
         name='Appium Script Runner',
     )

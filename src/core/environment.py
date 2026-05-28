@@ -41,10 +41,28 @@ def _get_portable_bin_paths():
 
 
 def _get_env_with_full_path():
-    """macOS .app 실행 시 shell PATH가 누락되는 문제를 보완"""
+    """GUI/EXE 실행 시 shell PATH가 누락되는 문제를 보완"""
     env = os.environ.copy()
 
-    if sys.platform != 'win32':
+    if sys.platform == 'win32':
+        appdata = os.environ.get('APPDATA', '')
+        localappdata = os.environ.get('LOCALAPPDATA', '')
+        android_home = (
+            os.environ.get('ANDROID_HOME')
+            or os.environ.get('ANDROID_SDK_ROOT')
+            or os.path.join(localappdata, 'Android', 'Sdk')
+        )
+        common_paths = [
+            os.path.join(appdata, 'npm'),                          # appium (npm global)
+            r'C:\Program Files\nodejs',                            # Node.js
+            os.path.join(android_home, 'platform-tools'),          # adb
+            os.path.join(android_home, 'tools'),
+        ]
+        existing = env.get('PATH', '').split(os.pathsep)
+        extra = [p for p in common_paths if p and p not in existing]
+        if extra:
+            env['PATH'] = os.pathsep.join(extra) + os.pathsep + env.get('PATH', '')
+    else:
         # zsh -l 은 ~/.zshrc를 소싱하지 않으므로 공통 경로는 항상 직접 추가
         common_paths = [
             '/usr/local/bin',
@@ -76,16 +94,18 @@ def _get_env_with_full_path():
     return env
 
 
-def check_command_available(command, version_flag='--version', timeout=5):
+def check_command_available(command, version_flag='--version', timeout=10):
     """명령어가 사용 가능한지 확인"""
-    commands_to_try = [command]
-
     if sys.platform == 'win32':
-        commands_to_try.extend([
-            f"{command}.exe",
+        # .cmd를 먼저 시도해야 extension-less 스크립트로 인한 hang 방지
+        commands_to_try = [
             f"{command}.cmd",
+            f"{command}.exe",
             f"{command}.bat",
-        ])
+            command,
+        ]
+    else:
+        commands_to_try = [command]
 
     env = _get_env_with_full_path()
 

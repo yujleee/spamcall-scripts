@@ -1,12 +1,9 @@
 # 📞 AOS 서비스별 스팸 전화 / 단어 자동 추가 테스트 스크립트 (공유용)
 
-본 스크립트는 Android 단말에서, 스팸 전화번호 및 차단 단어를 자동으로 추가하는 테스트 자동화 도구입니다.  
+본 스크립트는 Android / iOS 단말에서, 스팸 전화번호 및 차단 단어를 자동으로 추가하는 테스트 자동화 도구입니다.  
 **최대 등록 한도 팝업 확인을 위해 수동 입력 과정 생략**을 목적으로 만들어졌습니다.
 
-> ⚠️ 현재 **Windows OS** 환경에서 모든 스크립트 실행 가능합니다.
-<br>
-<br>
-⚠️ **Mac OS** 는 익시오 스팸 번호 차단/등록만 현재 가능합니다. (나머지 스크립트 실행 확인 후 보완 예정)
+> ⚠️ **Windows / Mac OS** 환경에서 실행 가능합니다.
 
 ---
 
@@ -33,73 +30,73 @@
 <br>
 <br>
 
--   스크립트 실행 방법은 아래와 같으며 Python, Appium, Vscode가 설치되어 있는 경우 4번부터 진행해도 무방합니다.
+## 📦 실행 버전 선택
 
-## 🧰 사전 준비 사항 (한 번만 하면 됨)
+배포 파일은 두 가지 버전이 있습니다.
 
-### 1. Python 설치
+| 버전 | 파일명 | 특징 |
+| ---- | ------ | ---- |
+| **일반 버전** | `Appium Script Runner` 폴더 | Node.js, Appium, ADB가 이미 설치된 환경에서 사용 |
+| **포터블 버전** | `Appium Script Runner Portable` 폴더 | 최초 실행 시 필요한 도구를 자동으로 다운로드 및 설치 |
 
--   https://www.python.org/downloads/
--   버전 3.10 이상
--   설치 시, **"Add Python to PATH" 체크 필수**
+> 💡 **처음 사용하거나 개발 환경이 세팅되어 있지 않다면 포터블 버전을 권장합니다.**
 
 <br>
-<br>
 
-### 2. Appium 설치
+### 일반 버전 사용 시 — 사전 준비 사항
 
-터미널(cmd) 창을 관리자 모드로 열고 아래 명령어 실행:
+Node.js, Appium, ADB가 이미 설치되어 있어야 합니다.
 
-`npm install -g appium`
+**Appium 설치** (터미널/cmd를 관리자 모드로 실행):
 
-Appium 설치 이전, 아래 프로그램들이 설치되어 있어야 합니다.
-설치와 관련해서는 구글 참조 바랍니다.
+```
+npm install -g appium
+```
+
+설치 후 아래 명령어로 환경이 올바르게 설정되었는지 확인할 수 있습니다.
+
+```
+npm install -g appium-doctor
+appium-doctor
+```
+
+❌ 마크가 뜨는 항목이 있다면 해당 문제를 해결한 후 재실행합니다.
+
+아래 항목들도 설치 및 환경변수 설정이 필요합니다:
 
 -   JDK
--   Android Studio 설치 및 환경변수 설정 (JAVA_HOME, ANDROID_HOME)
+-   Android Studio (`JAVA_HOME`, `ANDROID_HOME` 환경변수 설정)
 -   Node.js (https://nodejs.org/)
 
-터미널을 연 후 아래 명령어 실행:
-appium-doctor 는 현재 환경이 Appium을 실행하기에 적합한지 체크 후 보여주는 패키지입니다.
-
-`npm install appium-doctor`
-
-appium-doctor 설치 후 아래 명령어를 실행하면 환경 설정이 제대로 되었는지 확인 가능합니다.
-
-`appium-doctor`
-
-만약 명령어 실행 시 ❌ 마크가 뜨는 행이 있다면 그 행과 관련된 문제를 해결해준 후 재실행하면 됩니다.
-
 <br>
 <br>
 
+## 🚀 실행 방법
 
-### 3. VSCode 설치
+GitHub Repository에서 **Code > Download Zip** 클릭하여 다운로드 후 압축 해제합니다.
 
-https://code.visualstudio.com/
+### Windows
 
-실행 후, 아래 확장 프로그램 설치:
+`Appium Script Runner` (또는 `Appium Script Runner Portable`) **폴더 전체**를 원하는 위치에 복사한 뒤,  
+폴더 안의 `Appium Script Runner.exe` 파일을 실행합니다.
 
--   Python
-
--   Python Environment
-
-mac의 경우 파이썬 인터프리터를 지정해주어야 합니다.
-
-cmd + shift + p > pyhton interpreter 선택 하면 어떤 파이썬 버전으로 실행할 것인지 지정이 가능합니다.
-아래 경로를 참고하여 3.10 버전 이상의 경로를 지정해 줍니다.
-
-`/usr/local/bin/python3` (인텔 mac)  
-`/opt/homebrew/bin/python3` (M1 이상 mac)
+> ⚠️ `.exe` 파일만 따로 꺼내서 실행하면 동작하지 않습니다.  
+> 반드시 **폴더 전체**를 유지한 채로 실행해야 합니다.
 
 <br>
+
+### Mac
+
+`Appium Script Runner` (또는 `Appium Script Runner Portable`) **폴더 전체**를 원하는 위치에 복사한 뒤,  
+폴더 안의 `Appium Script Runner.app`을 실행합니다.
+
+> ⚠️ `.app` 파일만 따로 꺼내서 실행하면 동작하지 않습니다.  
+> 반드시 **폴더 전체**를 유지한 채로 실행해야 합니다.
+
 <br>
 
-## 📦 스크립트 다운로드 및 환경 설정
+### 포터블 버전 최초 실행 시
 
-### 4. 스크립트 다운로드 (현재 윈도우만 가능)
-
-GitHub Repository에서 Code > Download Zip 클릭하여 다운로드
-
-spamcall-scripts 폴더 안에서 `Appium Script Runner.exe` 파일 실행 (초기 실행 시간이 조금 소요될 수 있습니다.)
-
+최초 실행 시 Node.js, Appium, ADB를 자동으로 다운로드하여 설치합니다.  
+**인터넷 연결이 필요하며, 설치에 수 분이 소요될 수 있습니다.**  
+설치가 완료되면 이후 실행부터는 바로 시작됩니다.

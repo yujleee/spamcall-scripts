@@ -66,7 +66,7 @@ def add_spam_number():
         start_time = datetime.now()
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-        for i in range(start_num, end_num + 2):
+        for i in range(start_num, end_num + 1):
             padded_number = f"{i:03}"
 
             if is_ios:

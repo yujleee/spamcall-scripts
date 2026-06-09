@@ -43,11 +43,12 @@ def add_spam_words():
         caps = {
             "platformName": "iOS",
             "automationName": "XCUITest",
-            "deviceName": device_name,
+            "udid": device_name,
+            "deviceName": "iPhone",
             "platformVersion": platform_version,
-            "bundleId": "com.lguplus.aicallagent",  
-            "noReset": True,        # 앱 데이터 초기화 방지
-            "fullReset": False      # 앱 제거 후 재설치 방지
+            "bundleId": "com.lguplus.aicallagent",
+            "noReset": True,
+            "fullReset": False,
         }
         options = XCUITestOptions().load_capabilities(caps)
     else:

@@ -53,8 +53,7 @@ def add_spam_number():
         start_time = datetime.now()
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-        # gui에서 설정한 시작 번호부터 끝번호+2까지 반복
-        for i in range(start_num, end_num+2):
+        for i in range(start_num, end_num + 1):
 
             # 세 자리 숫자로 입력
             padded_number = f"{i:03}" 

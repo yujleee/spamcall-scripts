@@ -1,5 +1,7 @@
 import subprocess
 
+from src.core.environment import _get_env_with_full_path
+
 
 def _ideviceinfo(udid, key):
     """ideviceinfo로 특정 속성 값 가져오기"""
@@ -7,6 +9,7 @@ def _ideviceinfo(udid, key):
         result = subprocess.run(
             ['ideviceinfo', '-u', udid, '-k', key],
             capture_output=True, text=True, timeout=5,
+            env=_get_env_with_full_path(),
         )
         return result.stdout.strip() if result.returncode == 0 else "Unknown"
     except Exception:
@@ -19,6 +22,7 @@ def check_ios_connection():
         result = subprocess.run(
             ['idevice_id', '-l'],
             capture_output=True, text=True, timeout=10,
+            env=_get_env_with_full_path(),
         )
         if result.returncode != 0:
             return None

@@ -38,7 +38,8 @@ def add_spam_number():
         caps = {
             "platformName": "iOS",
             "automationName": "XCUITest",
-            "deviceName": device_name,
+            "udid": device_name,
+            "deviceName": "iPhone",
             "platformVersion": platform_version,
             "bundleId": "com.lguplus.aicallagent",
             "noReset": True,
@@ -76,28 +77,32 @@ def add_spam_number():
             input_field.click()
             input_field.send_keys(str(padded_number))
 
-            # 키보드 닫기
-            if is_ios:
-                driver.hide_keyboard()
-            else:
+            # 키보드 닫기 (Android만)
+            if not is_ios:
                 driver.press_keycode(4)
 
             if is_ios:
-                btn_register = find(driver, AppiumBy.XPATH, '//XCUIElementTypeButton[@name="등록"]')
+                btn_register = find(driver, AppiumBy.ACCESSIBILITY_ID, '등록')
             else:
                 btn_register = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
                                     'new UiSelector().text("등록")')
             btn_register.click()
 
             if is_ios:
-                registered_num_element = find(driver, AppiumBy.IOS_PREDICATE_STRING,
-                                              'label BEGINSWITH "전체"')
+                all_texts = driver.find_elements(AppiumBy.CLASS_NAME, 'XCUIElementTypeStaticText')
+                current_num = 0
+                for idx, el in enumerate(all_texts):
+                    lbl = el.get_attribute('label') or ''
+                    if lbl.startswith('/') and idx > 0:
+                        prev = all_texts[idx - 1].get_attribute('label') or ''
+                        if prev.strip().isdigit():
+                            current_num = int(prev.strip())
+                            break
             else:
                 registered_num_element = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
                                               'new UiSelector().textStartsWith("전체")')
-
-            full_text = registered_num_element.text
-            current_num = int(re.search(r'(\d+)/', full_text).group(1))
+                full_text = registered_num_element.text
+                current_num = int(re.search(r'(\d+)/', full_text).group(1))
 
             if current_num >= 600:
                 try:
@@ -126,11 +131,11 @@ def add_spam_number():
                     display_text = padded_number
 
                 if is_ios:
-                    find(driver, AppiumBy.IOS_PREDICATE_STRING,
-                         f'label CONTAINS "{display_text}"', timeout=5)
+                    find(driver, AppiumBy.IOS_PREDICATE,
+                         f'label CONTAINS "{display_text}"', timeout=3)
                 else:
                     xpath = f'//android.widget.TextView[contains(@text, "{display_text}")]'
-                    find(driver, AppiumBy.XPATH, xpath, timeout=5)
+                    find(driver, AppiumBy.XPATH, xpath, timeout=3)
 
             except Exception:
                 print(f"🕹️ ❗️ {display_text} 등록 실패 또는 시간 초과")

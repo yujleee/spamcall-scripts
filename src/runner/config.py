@@ -8,7 +8,7 @@ SCRIPT_MAPPING = {
     },
     "ixiO_add_spam_words.py": {
         "display": "익시오 - 스팸 단어 추가",
-        "platforms": ["android", "ios"],
+        "platforms": ["android"],
     },
     "mobileManager_add_spam_number.py": {
         "display": "모바일매니저 - 스팸 번호 추가",

@@ -67,7 +67,7 @@ def add_spam_number():
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         for i in range(start_num, end_num + 1):
-            padded_number = f"{i:03}"
+            padded_number = f"070{i:03}"
 
             if is_ios:
                 input_field = find(driver, AppiumBy.CLASS_NAME, 'XCUIElementTypeTextField')
@@ -125,7 +125,9 @@ def add_spam_number():
                 break
 
             try:
-                if padded_number.startswith("02") and len(padded_number) == 3:
+                if padded_number.startswith("070"):
+                    display_text = f"070-{padded_number[3:]}"
+                elif padded_number.startswith("02") and len(padded_number) == 3:
                     display_text = f"02-{padded_number[2]}"
                 else:
                     display_text = padded_number

@@ -10,16 +10,20 @@ SCRIPT_MAPPING = {
         "display": "익시오 - 스팸 단어 추가",
         "platforms": ["android"],
     },
+        "ixiO_add_greeting.py": {
+        "display": "익시오 - 인사말 추가",
+        "platforms": ["android", "ios"],
+    },
     "mobileManager_add_spam_number.py": {
         "display": "모바일매니저 - 스팸 번호 추가",
         "platforms": ["android"],
     },
-    "spamcallnoti_add_spam_number.py": {
-        "display": "스팸전화알림 - 스팸 번호 추가",
-        "platforms": ["android"],
-    },
     "mobileManager_add_spam_words.py": {
         "display": "모바일매니저 - 스팸 단어 추가",
+        "platforms": ["android"],
+    },
+    "spamcallnoti_add_spam_number.py": {
+        "display": "스팸전화알림 - 스팸 번호 추가",
         "platforms": ["android"],
     },
 }

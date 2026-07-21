@@ -13,12 +13,6 @@ from appium.options.ios import XCUITestOptions
 from utils.util import find
 from datetime import datetime
 
-# ======================================================
-# 익시오 차단 예외 번호 최대 갯수 확인 스크립트
-# ======================================================
-# - ✨ 실행 전 확인 사항
-# - 익시오 앱 진입 > 스팸 차단 번호 추가 화면까지 진입한 상태에서 실행
-
 
 def add_greeting():
     device_name = os.environ.get('APPIUM_DEVICE_NAME')

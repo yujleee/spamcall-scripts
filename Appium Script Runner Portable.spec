@@ -14,9 +14,35 @@ if sys.platform == 'win32':
             if file.lower().endswith('.dll'):
                 additional_binaries.append((os.path.join(dll_path, file), '.'))
 
-# appium 패키지 전체 수집
-appium_datas, appium_binaries, appium_hiddenimports = collect_all('appium')
-additional_binaries += appium_binaries
+# appium/selenium 및 이들의 런타임 의존 패키지 전체 수집
+# (scripts/*.py는 importlib로 동적 로드되어 PyInstaller 정적 분석 대상에 안 잡히므로
+#  런타임에 필요한 서드파티 패키지를 여기서 명시적으로 모두 수집해야 함)
+_runtime_packages = [
+    'appium', 'selenium',
+    'urllib3', 'certifi', 'idna',
+    'trio', 'trio_websocket', 'wsproto', 'outcome', 'sniffio',
+    'attr', 'attrs', 'cffi', 'pycparser',
+    'h11', 'websocket', 'socks', 'sortedcontainers',
+    'exceptiongroup', 'typing_extensions',
+]
+
+extra_datas = []
+extra_hiddenimports = []
+for _pkg in _runtime_packages:
+    _datas, _binaries, _hiddenimports = collect_all(_pkg)
+    extra_datas += _datas
+    additional_binaries += _binaries
+    extra_hiddenimports += _hiddenimports
+
+# collect_all()은 "패키지"(디렉터리+__init__.py)가 아닌 단일 .py 모듈은
+# 데이터 파일로 추출해주지 않는다 (PYZ 안에 바이트코드로만 들어감).
+# 외부 시스템 Python이 BASE_DIR 경유로 이 파일들을 직접 찾아 읽어야 하므로
+# loose 파일로도 명시적으로 복사해 둔다.
+import importlib.util as _ilu
+for _mod in ('typing_extensions', 'socks', 'sockshandler'):
+    _spec = _ilu.find_spec(_mod)
+    if _spec and _spec.origin:
+        extra_datas.append((_spec.origin, '.'))
 
 a = Analysis(
     ['main.py'],
@@ -28,7 +54,7 @@ a = Analysis(
         ('utils', 'utils'),
         ('img', 'img'),
         ('portable.flag', '.'),   # 포터블 빌드 식별자
-    ] + appium_datas,
+    ] + extra_datas,
     hiddenimports=[
         # 앱 서브모듈
         'src.core.environment',
@@ -61,7 +87,7 @@ a = Analysis(
         'urllib.request',
         'urllib.error',
         'ctypes',
-    ] + appium_hiddenimports,
+    ] + extra_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

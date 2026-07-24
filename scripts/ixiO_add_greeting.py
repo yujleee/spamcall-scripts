@@ -73,7 +73,7 @@ def add_greeting():
             greeting_word = f"인사말 추가 테스트 {i}"
 
             if is_ios:
-                input_field = find(driver, AppiumBy.CLASS_NAME, 'XCUIElementTypeTextField')
+                input_field = find(driver, AppiumBy.ACCESSIBILITY_ID, '인사말을 입력하세요')
             else:
                 try:
                     input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
@@ -82,8 +82,8 @@ def add_greeting():
                 except Exception:
                     input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
                                         'new UiSelector().className("android.widget.EditText").instance(1)')
-            driver.execute_script('mobile: type', {'text': greeting_word})
-            # input_field.send_keys(greeting_word)
+            input_field.click()
+            input_field.send_keys(greeting_word)
 
             if not is_ios:
                 driver.press_keycode(4)
@@ -101,8 +101,11 @@ def add_greeting():
             print(f"✅ 인사말 #{i} 추가 완료: '{greeting_word}'")
             time.sleep(0.8)
 
-        btn_save = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
-                            'new UiSelector().text("저장")')
+        if is_ios:
+            btn_save = find(driver, AppiumBy.ACCESSIBILITY_ID, '저장')
+        else:
+            btn_save = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                                'new UiSelector().text("저장")')
         btn_save.click()
         end_time = datetime.now()
         print(f"🔥 스크립트 종료: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")

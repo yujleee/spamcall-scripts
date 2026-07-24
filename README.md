@@ -66,6 +66,18 @@ iOS 스크립트 실행은 Mac에서만 가능합니다.
 
 <br>
 
+#### ⚠️ macOS 최초 실행 시 "확인되지 않은 개발자" 경고
+
+`.app`이 정식 Apple Developer 서명/공증 없이 배포되기 때문에, 브라우저로 다운로드하면 macOS가 격리(quarantine) 속성을 붙여 더블클릭 시 열리지 않을 수 있습니다. 아래 중 하나로 해결합니다.
+
+- **우클릭(또는 Control+클릭) → 열기** 선택 후 뜨는 경고 창에서 다시 "열기" (최초 1회만 필요)
+- 또는 터미널에서 격리 속성 직접 제거:
+  ```
+  xattr -cr "Appium Script Runner.app"
+  ```
+
+<br>
+
 ### 포터블 버전
 
 1. `Appium.Script.Runner.Portable.zip` 다운로드 후 압축 해제

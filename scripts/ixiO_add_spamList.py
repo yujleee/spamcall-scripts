@@ -66,6 +66,7 @@ def add_spam_number():
         start_time = datetime.now()
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
+        prev_num = None
         for i in range(start_num, end_num + 1):
             padded_number = f"070{i:03}"
 
@@ -124,26 +125,14 @@ def add_spam_number():
                     print(f"❌ 팝업 미노출 또는 닫기 실패: {e}")
                 break
 
-            try:
-                if padded_number.startswith("070"):
-                    display_text = f"070-{padded_number[3:]}"
-                elif padded_number.startswith("02") and len(padded_number) == 3:
-                    display_text = f"02-{padded_number[2]}"
-                else:
-                    display_text = padded_number
-
-                if is_ios:
-                    find(driver, AppiumBy.IOS_PREDICATE,
-                         f'label CONTAINS "{display_text}"', timeout=3)
-                else:
-                    xpath = f'//android.widget.TextView[contains(@text, "{display_text}")]'
-                    find(driver, AppiumBy.XPATH, xpath, timeout=3)
-
-            except Exception:
-                print(f"🕹️ ❗️ {display_text} 등록 실패 또는 시간 초과")
+            # 화면에 표시되는 번호 포맷(자릿수 그룹핑 등)은 앱마다 달라 추측하기
+            # 취약하므로, 대신 등록 개수 카운터가 실제로 늘었는지로 성공 여부를 판단한다.
+            if prev_num is not None and current_num <= prev_num:
+                print(f"🕹️ ❗️ {padded_number} 등록 실패 또는 반영 안 됨 (등록 개수: {prev_num} → {current_num})")
                 break
+            prev_num = current_num
 
-            print(f"  스팸번호 {i} 등록 완료")
+            print(f"  스팸번호 {i} 등록 완료 (총 {current_num}개)")
             time.sleep(0.5)
 
         end_time = datetime.now()

@@ -2,6 +2,7 @@ import json
 import os
 import platform
 import shutil
+import ssl
 import subprocess
 import sys
 import tarfile
@@ -10,6 +11,21 @@ import zipfile
 from pathlib import Path
 
 from utils.safe_print import safe_print
+
+# python.org 빌드(및 그걸로 만든 PyInstaller 번들)는 OS 인증서 저장소를 자동으로
+# 못 찾아 urllib 다운로드가 CERTIFICATE_VERIFY_FAILED로 실패하는 경우가 있다.
+# certifi의 CA 번들을 명시적으로 지정해 이 모듈의 모든 urllib 요청에 적용한다.
+try:
+    import certifi
+    urllib.request.install_opener(
+        urllib.request.build_opener(
+            urllib.request.HTTPSHandler(
+                context=ssl.create_default_context(cafile=certifi.where())
+            )
+        )
+    )
+except ImportError:
+    pass
 
 
 def setup_unicode_environment():
@@ -252,6 +268,9 @@ def setup_appium():
         safe_print("📦 Appium 패키지 설치 중... (시간이 걸릴 수 있습니다)")
         env = os.environ.copy()
         env['PATH'] = str(node_dir / ("" if system == "windows" else "bin")) + os.pathsep + env.get('PATH', '')
+        # APPIUM_HOME을 명시하지 않으면 드라이버가 전역 ~/.appium에 설치되어
+        # 격리된 포터블 환경(런처가 실행 시 이 경로를 APPIUM_HOME으로 사용)과 어긋난다.
+        env['APPIUM_HOME'] = str(appium_dir.absolute())
 
         result = subprocess.run(
             [npm_cmd, 'install', 'appium@2.0.0', '--save'],
@@ -268,8 +287,11 @@ def setup_appium():
             return False
 
         safe_print("📦 UiAutomator2 드라이버 설치 중...")
+        # 버전을 안 박으면 latest(appium-uiautomator2-driver 3.x+)가 잡히는데
+        # 이 앱이 설치하는 appium@2.0.0(peer: appium ^2.4.1)과 호환이 안 돼
+        # ERESOLVE로 설치가 실패한다. appium 2.x와 맞는 2.x 라인으로 고정한다.
         driver_result = subprocess.run(
-            [node_cmd, str(appium_exe), 'driver', 'install', 'uiautomator2'],
+            [node_cmd, str(appium_exe), 'driver', 'install', 'uiautomator2@^2.0.0'],
             timeout=180,
             env=env,
             capture_output=True,

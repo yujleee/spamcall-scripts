@@ -7,16 +7,37 @@ import threading
 import builtins
 
 
-def _find_system_python():
-    """시스템에 설치된 Python 실행 파일 경로 반환"""
+def _find_system_python(extra_path=None):
+    """selenium/appium을 실제로 import할 수 있는 시스템 Python 반환
+
+    단순히 'python3 --version'이 성공하는 것만으로는 부족하다.
+    시스템에 여러 Python이 깔려 있을 때 먼저 잡히는 것이 scripts/*.py가
+    필요로 하는 패키지(selenium, appium 등)와 다른 버전/구성일 수 있어
+    (예: macOS 기본 python3와 빌드에 쓴 python3의 ABI가 달라 프리즈된
+    번들 코드를 못 읽음) 실제 import 가능 여부까지 확인해야 한다.
+    """
     creation_flags = subprocess.CREATE_NO_WINDOW if platform.system() == 'Windows' else 0
     candidates = ['py', 'python3', 'python']
+
+    # scripts/*.py가 실제로 쓰는 import문과 동일해야 한다.
+    # 'import appium'만으로는 하위 모듈(selenium.webdriver 등) 로딩이
+    # 트리거되지 않아 검증을 통과해버리고, 정작 스크립트 실행 시점에
+    # 깊은 하위 모듈에서 뒤늦게 ImportError가 나는 걸 놓치게 된다.
+    check_code = (
+        'from appium import webdriver; '
+        'from appium.webdriver.common.appiumby import AppiumBy; '
+        'from appium.options.android import UiAutomator2Options; '
+        'from appium.options.ios import XCUITestOptions'
+    )
+    if extra_path:
+        check_code = f'import sys; sys.path.insert(0, {extra_path!r}); {check_code}'
+
     for cmd in candidates:
         try:
             result = subprocess.run(
-                [cmd, '--version'],
+                [cmd, '-c', check_code],
                 capture_output=True,
-                timeout=5,
+                timeout=10,
                 creationflags=creation_flags,
             )
             if result.returncode == 0:
@@ -156,7 +177,7 @@ def execute_script(
                 if log_callback:
                     log_callback("📦 EXE 환경에서 실행합니다. 시스템 Python을 탐색합니다...")
 
-                python_cmd = _find_system_python()
+                python_cmd = _find_system_python(getattr(sys, '_MEIPASS', None))
 
                 if python_cmd:
                     if log_callback:

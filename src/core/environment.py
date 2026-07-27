@@ -60,8 +60,9 @@ def _get_env_with_full_path():
         ]
         existing = env.get('PATH', '').split(os.pathsep)
         extra = [p for p in common_paths if p and p not in existing]
-        if extra:
-            env['PATH'] = os.pathsep.join(extra) + os.pathsep + env.get('PATH', '')
+        portable_paths = [p for p in _get_portable_bin_paths() if p not in existing]
+        if extra or portable_paths:
+            env['PATH'] = os.pathsep.join(portable_paths + extra) + os.pathsep + env.get('PATH', '')
     else:
         # zsh -l 은 ~/.zshrc를 소싱하지 않으므로 공통 경로는 항상 직접 추가
         common_paths = [
@@ -142,7 +143,9 @@ def check_system_environment(get_versions=False):
     if node_available:
         safe_print(f"✅ Node.js: {node_version}")
 
-    appium_available, appium_version = check_command_available('appium', '--version')
+    # appium --version은 드라이버 호환성/레지스트리 조회 때문에 10초를 넘기는 경우가 있어
+    # (실측 약 15초) 다른 도구보다 넉넉한 타임아웃을 준다.
+    appium_available, appium_version = check_command_available('appium', '--version', timeout=25)
     if not appium_available:
         npm_available, npm_output = check_command_available('npm', 'list -g appium --depth=0')
         if npm_available and npm_output and 'appium@' in npm_output:

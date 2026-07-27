@@ -172,3 +172,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# 포터블 실행환경 (자동 설치되는 Node.js/Appium/ADB 런타임 및 생성 런처)
+/runtime/
+start_appium_gui.bat
+start_appium_gui.sh

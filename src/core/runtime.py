@@ -290,14 +290,18 @@ def setup_appium():
         # 버전을 안 박으면 latest(appium-uiautomator2-driver 3.x+)가 잡히는데
         # 이 앱이 설치하는 appium@2.0.0(peer: appium ^2.4.1)과 호환이 안 돼
         # ERESOLVE로 설치가 실패한다. appium 2.x와 맞는 2.x 라인으로 고정한다.
+        # appium_exe(.cmd/셸 스크립트)를 node에 인자로 넘기면 node가 이를 JS로
+        # 파싱하려다 SyntaxError로 실패한다. 셸 래퍼를 직접 실행해야 한다
+        # (Windows의 .cmd는 shell=True로 cmd.exe를 통해 실행).
         driver_result = subprocess.run(
-            [node_cmd, str(appium_exe), 'driver', 'install', 'uiautomator2@^2.0.0'],
+            [str(appium_exe), 'driver', 'install', 'uiautomator2@^2.0.0'],
             timeout=180,
             env=env,
             capture_output=True,
             text=True,
             encoding='utf-8',
             errors='replace',
+            shell=(system == "windows"),
         )
         if driver_result.returncode != 0:
             safe_print(f"⚠️  UiAutomator2 드라이버 설치 실패: {driver_result.stderr}")

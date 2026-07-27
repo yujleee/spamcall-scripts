@@ -83,7 +83,13 @@ def add_greeting():
                     input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
                                         'new UiSelector().className("android.widget.EditText").instance(1)')
             input_field.click()
-            input_field.send_keys(greeting_word)
+            if is_ios:
+                input_field.send_keys(greeting_word)
+            else:
+                # 이 바텀시트의 EditText는 표준 setText(send_keys)에 반응하지 않아
+                # InvalidElementStateException이 발생한다. UiAutomator2의 IME
+                # 입력 제스처(mobile: type)를 사용해야 정상 입력된다.
+                driver.execute_script('mobile: type', {'text': greeting_word})
 
             if not is_ios:
                 driver.press_keycode(4)

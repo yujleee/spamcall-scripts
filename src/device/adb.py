@@ -1,6 +1,8 @@
 import subprocess
 import platform
 
+from src.core.environment import _get_env_with_full_path
+
 
 def get_device_property(device_id, prop_name):
     """디바이스 속성 값 가져오기"""
@@ -10,6 +12,7 @@ def get_device_property(device_id, prop_name):
             capture_output=True,
             text=True,
             timeout=5,
+            env=_get_env_with_full_path(),
         )
         return result.stdout.strip() if result.returncode == 0 else "Unknown"
     except Exception:
@@ -24,6 +27,7 @@ def check_adb_connection():
             capture_output=True,
             text=True,
             timeout=10,
+            env=_get_env_with_full_path(),
         )
         if result.returncode != 0:
             return None

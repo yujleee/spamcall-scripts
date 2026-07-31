@@ -254,7 +254,7 @@ def create_gui():
     device_label = ttk.Label(connection_frame, text="연결된 디바이스: 없음", foreground="red")
     device_label.grid(row=0, column=1, sticky=tk.W)
 
-    info_text = tk.Text(adb_frame, height=3, width=70, state='disabled', font=tk_font, bg='#f8f8f8')
+    info_text = tk.Text(adb_frame, height=3, width=70, state='disabled', font=tk_font, bg='#f8f8f8', fg='#000000')
     info_text.grid(row=2, column=0, columnspan=2, pady=(10, 0), sticky=(tk.W, tk.E))
 
     # 2. 스크립트 선택 섹션

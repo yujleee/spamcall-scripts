@@ -180,3 +180,6 @@ start_appium_gui.sh
 
 # macOS
 .DS_Store
+
+# 스크립트 실패 시점 진단용 스크린샷/page_source
+/debug/

@@ -10,8 +10,26 @@ from appium import webdriver
 from appium.webdriver.common.appiumby import AppiumBy
 from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
-from utils.util import find
+from utils.util import find, click
 from datetime import datetime
+
+
+def _dump_debug_state(driver, tag):
+    """실패 시점의 화면 상태(스크린샷 + page_source)를 debug/ 폴더에 저장한다."""
+    debug_dir = os.path.join(BASE_DIR, "debug")
+    os.makedirs(debug_dir, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    base_path = os.path.join(debug_dir, f"{tag}_{stamp}")
+    try:
+        driver.get_screenshot_as_file(f"{base_path}.png")
+    except Exception:
+        pass
+    try:
+        with open(f"{base_path}.xml", "w", encoding="utf-8") as f:
+            f.write(driver.page_source)
+    except Exception:
+        pass
+    return base_path
 
 
 def add_greeting():
@@ -63,49 +81,58 @@ def add_greeting():
         for i in range(start_num, end_num + 1):
             print(f"🔁 {i - start_num + 1}/{end_num - start_num + 1}번째 인사말 추가")
 
-            if is_ios:
-                btn_greeting = find(driver, AppiumBy.ACCESSIBILITY_ID, '인사말 추가')
-            else:
-                btn_greeting = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
-                                   'new UiSelector().text("인사말 추가")')
-            btn_greeting.click()
+            try:
+                if is_ios:
+                    btn_greeting = find(driver, AppiumBy.ACCESSIBILITY_ID, '인사말 추가')
+                else:
+                    btn_greeting = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                                       'new UiSelector().text("인사말 추가")')
+                btn_greeting.click()
 
-            greeting_word = f"인사말 추가 테스트 {i}"
+                greeting_word = f"인사말 추가 테스트 {i}"
 
-            if is_ios:
-                input_field = find(driver, AppiumBy.ACCESSIBILITY_ID, '인사말을 입력하세요')
-            else:
-                try:
-                    input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
-                                       'new UiSelector().text("인사말을 입력하세요")')
-                                      
-                except Exception:
-                    input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
-                                        'new UiSelector().className("android.widget.EditText").instance(1)')
-            input_field.click()
-            if is_ios:
-                input_field.send_keys(greeting_word)
-            else:
-                # 이 바텀시트의 EditText는 표준 setText(send_keys)에 반응하지 않아
-                # InvalidElementStateException이 발생한다. UiAutomator2의 IME
-                # 입력 제스처(mobile: type)를 사용해야 정상 입력된다.
-                driver.execute_script('mobile: type', {'text': greeting_word})
+                if is_ios:
+                    input_field = find(driver, AppiumBy.ACCESSIBILITY_ID, '인사말을 입력하세요')
+                else:
+                    try:
+                        input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                                           'new UiSelector().text("인사말을 입력하세요")')
 
-            if not is_ios:
-                driver.press_keycode(4)
+                    except Exception:
+                        input_field = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                                            'new UiSelector().className("android.widget.EditText").instance(1)')
+                input_field.click()
+                if is_ios:
+                    input_field.send_keys(greeting_word)
+                else:
+                    # 이 바텀시트의 EditText는 표준 setText(send_keys)에 반응하지 않아
+                    # InvalidElementStateException이 발생한다. UiAutomator2의 IME
+                    # 입력 제스처(mobile: type)를 사용해야 정상 입력된다.
+                    driver.execute_script('mobile: type', {'text': greeting_word})
 
-            if is_ios:
-                btn_confirm = find(driver, AppiumBy.ACCESSIBILITY_ID, '확인')
-            else:
-                btn_confirm = find(driver, AppiumBy.ANDROID_UIAUTOMATOR,
-                                    'new UiSelector().text("확인")')
-            btn_confirm.click()
+                if not is_ios:
+                    # 뒤로가기 키(keycode 4)는 키보드가 아직 안 떠 있는 타이밍에
+                    # 눌리면 키보드 대신 바텀시트 자체를 닫아버리는 레이스가 있어
+                    # 키보드 전용 종료 명령을 사용한다.
+                    if driver.is_keyboard_shown():
+                        driver.hide_keyboard()
 
-           
-            time.sleep(0.5)
+                if is_ios:
+                    click(driver, AppiumBy.ACCESSIBILITY_ID, '확인')
+                else:
+                    # 키보드 닫힘 애니메이션으로 레이아웃이 막 바뀐 직후라
+                    # 찾은 요소가 클릭 시점에 stale해지는 경우가 있어 재시도한다.
+                    click(driver, AppiumBy.ANDROID_UIAUTOMATOR,
+                          'new UiSelector().text("확인")')
 
-            print(f"✅ 인사말 #{i} 추가 완료: '{greeting_word}'")
-            time.sleep(0.8)
+                time.sleep(0.5)
+
+                print(f"✅ 인사말 #{i} 추가 완료: '{greeting_word}'")
+                time.sleep(0.8)
+            except Exception:
+                debug_path = _dump_debug_state(driver, f"greeting_{i}_fail")
+                print(f"🧩 실패 시점 화면 저장: {debug_path}.png / {debug_path}.xml")
+                raise
 
         if is_ios:
             btn_save = find(driver, AppiumBy.ACCESSIBILITY_ID, '저장')

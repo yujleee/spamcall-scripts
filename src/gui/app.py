@@ -323,6 +323,31 @@ def create_gui():
     )
     log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
+    def _copy_log_selection(event=None):
+        try:
+            log_text.event_generate("<<Copy>>")
+        except tk.TclError:
+            pass
+        return "break"
+
+    def _select_all_log(event=None):
+        log_text.tag_add(tk.SEL, "1.0", tk.END)
+        log_text.mark_set(tk.INSERT, "1.0")
+        return "break"
+
+    log_context_menu = tk.Menu(log_text, tearoff=0)
+    log_context_menu.add_command(label="복사", command=_copy_log_selection)
+    log_context_menu.add_command(label="전체 선택", command=_select_all_log)
+
+    def _show_log_context_menu(event):
+        log_context_menu.tk_popup(event.x_root, event.y_root)
+
+    log_text.bind("<Command-c>", _copy_log_selection)
+    log_text.bind("<Control-c>", _copy_log_selection)
+    log_text.bind("<Button-2>", _show_log_context_menu)
+    log_text.bind("<Button-3>", _show_log_context_menu)
+    log_text.bind("<Control-Button-1>", _show_log_context_menu)
+
     main_frame.columnconfigure(1, weight=1)
     main_frame.rowconfigure(4, weight=1)
     log_frame.columnconfigure(0, weight=1)

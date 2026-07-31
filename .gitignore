@@ -177,3 +177,6 @@ cython_debug/
 /runtime/
 start_appium_gui.bat
 start_appium_gui.sh
+
+# macOS
+.DS_Store

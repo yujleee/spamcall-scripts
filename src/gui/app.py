@@ -282,7 +282,7 @@ def create_gui():
 
     # 3. 번호/단어 범위 설정
     range_frame = ttk.LabelFrame(
-        main_frame, text="🔢 번호 및 단어 추가 범위 설정 (1~999)", padding="10"
+        main_frame, text="🔢 번호 및 단어 추가 범위 설정 (1부터 가능)", padding="10"
     )
     range_frame.grid(row=2, column=0, columnspan=5, sticky=(tk.W, tk.E), pady=(0, 10))
 

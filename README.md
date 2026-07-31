@@ -30,9 +30,9 @@
 <br>
 <br>
 
-## 🚀 실행 방법 (Windows)
+## 🚀 실행 방법
 
-> ℹ️ 현재 Windows 버전만 배포되어 있습니다.
+> 📄 OS별 상세 실행 가이드: [Windows (Android)](docs/RUN_WINDOWS.md) · [macOS (Android + iOS)](docs/RUN_MAC.md)
 
 [Releases 페이지](../../releases)에서 최신 버전을 다운로드합니다.
 

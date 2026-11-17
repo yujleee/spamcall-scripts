@@ -22,6 +22,14 @@ SCRIPT_MAPPING = {
         "display": "모바일매니저 - 스팸 단어 추가",
         "platforms": ["android"],
     },
+    "blocksmishing_add_spam_number.py": {
+        "display": "스팸차단(문자) - 스팸 번호 추가",
+        "platforms": ["android"],
+    },
+    "blocksmishing_add_spam_words.py": {
+        "display": "스팸차단(문자) - 스팸 문구 추가",
+        "platforms": ["android"],
+    },
     "spamcallnoti_add_spam_number.py": {
         "display": "스팸전화알림 - 스팸 번호 추가",
         "platforms": ["android"],

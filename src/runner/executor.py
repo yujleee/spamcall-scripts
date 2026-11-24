@@ -1,6 +1,7 @@
 import importlib.util
 import os
 import platform
+import signal
 import subprocess
 import sys
 import threading
@@ -59,13 +60,22 @@ def stop_running_script():
 
     if running_process and running_process.poll() is None:
         try:
-            running_process.terminate()
+            # 정상 중단을 먼저 보내야 스크립트의 finally 블록에서
+            # driver.quit()이 실행되어 Appium 세션/WDA 포트가 정리된다.
+            if os.name == 'nt':
+                running_process.terminate()
+            else:
+                running_process.send_signal(signal.SIGINT)
             try:
-                running_process.wait(timeout=3)
+                running_process.wait(timeout=10)
                 return True
             except subprocess.TimeoutExpired:
-                running_process.kill()
-                running_process.wait()
+                running_process.terminate()
+                try:
+                    running_process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    running_process.kill()
+                    running_process.wait()
                 return True
         except Exception as e:
             print(f"스크립트 중지 오류: {e}")
@@ -236,7 +246,7 @@ def execute_script(
                     if log_callback:
                         if return_code == 0:
                             log_callback("🎉 스크립트가 성공적으로 완료되었습니다!")
-                        elif return_code == -15:
+                        elif return_code in (-signal.SIGINT, -signal.SIGTERM):
                             log_callback("⏹️ 스크립트가 사용자에 의해 중지되었습니다.")
                         else:
                             log_callback(f"❌ 스크립트가 오류로 종료되었습니다. (종료 코드: {return_code})")
@@ -328,7 +338,7 @@ def execute_script(
                 if log_callback:
                     if return_code == 0:
                         log_callback("🎉 스크립트가 성공적으로 완료되었습니다!")
-                    elif return_code == -15:
+                    elif return_code in (-signal.SIGINT, -signal.SIGTERM):
                         log_callback("⏹️ 스크립트가 사용자에 의해 중지되었습니다.")
                     else:
                         log_callback(f"❌ 스크립트가 오류로 종료되었습니다. (종료 코드: {return_code})")

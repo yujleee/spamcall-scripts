@@ -72,9 +72,9 @@ def add_spam_number():
         }
         options = UiAutomator2Options().load_capabilities(caps)
 
-    driver = webdriver.Remote("http://localhost:4723", options=options)
-
+    driver = None
     try:
+        driver = webdriver.Remote("http://localhost:4723", options=options)
         start_time = datetime.now()
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -152,7 +152,8 @@ def add_spam_number():
         print(f"🔥 총 소요 시간: {end_time - start_time}")
 
     finally:
-        driver.quit()
+        if driver is not None:
+            driver.quit()
 
 
 if __name__ == "__main__":

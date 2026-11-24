@@ -3,7 +3,7 @@ import queue
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 
-from src.device.adb import auto_open_appium_terminal, check_adb_connection
+from src.device.adb import auto_open_appium_terminal, check_adb_connection, stop_appium_server
 from src.device.ios import check_ios_connection
 from src.runner.config import get_available_scripts
 from src.runner.executor import execute_script, stop_running_script
@@ -373,7 +373,12 @@ def create_gui():
 
     refresh_scripts()
 
+    def on_close():
+        stop_appium_server()
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_close)
     root.after(50, _process_log_queue)
-    root.after(1000, auto_open_appium_terminal)
+    root.after(1000, auto_open_appium_terminal, log_message)
 
     root.mainloop()

@@ -2,7 +2,6 @@ import re
 import time
 import sys
 import os
-import socket
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE_DIR)
@@ -36,16 +35,6 @@ def add_spam_number():
     is_ios = platform_name == 'ios'
 
     if is_ios:
-        # WDA의 기본 포트(8100)가 다른 Appium 세션에서 사용 중일 수 있다.
-        # 필요하면 APPIUM_WDA_LOCAL_PORT로 고정 포트를 지정할 수 있다.
-        wda_local_port = os.environ.get('APPIUM_WDA_LOCAL_PORT')
-        if wda_local_port:
-            wda_local_port = int(wda_local_port)
-        else:
-            with socket.socket() as port_socket:
-                port_socket.bind(('127.0.0.1', 0))
-                wda_local_port = port_socket.getsockname()[1]
-
         caps = {
             "platformName": "iOS",
             "automationName": "XCUITest",
@@ -55,7 +44,6 @@ def add_spam_number():
             "bundleId": "com.lguplus.aicallagent",
             "noReset": True,
             "fullReset": False,
-            "wdaLocalPort": wda_local_port,
         }
         options = XCUITestOptions().load_capabilities(caps)
     else:
@@ -72,9 +60,9 @@ def add_spam_number():
         }
         options = UiAutomator2Options().load_capabilities(caps)
 
-    driver = None
+    driver = webdriver.Remote("http://localhost:4723", options=options)
+
     try:
-        driver = webdriver.Remote("http://localhost:4723", options=options)
         start_time = datetime.now()
         print(f"🔥 스크립트 시작: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -152,8 +140,7 @@ def add_spam_number():
         print(f"🔥 총 소요 시간: {end_time - start_time}")
 
     finally:
-        if driver is not None:
-            driver.quit()
+        driver.quit()
 
 
 if __name__ == "__main__":

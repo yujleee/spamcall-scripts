@@ -56,7 +56,7 @@ def add_spam_number():
         for i in range(start_num, end_num + 1):
 
             # 세 자리 숫자로 입력
-            padded_number = f"{i:03}" 
+            padded_number = f"070{i:03}"
 
             btn_add_number = find(driver, AppiumBy.ACCESSIBILITY_ID, '번호추가')
             btn_add_number.click()

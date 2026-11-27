@@ -6,12 +6,12 @@ from utils.safe_print import safe_print
 
 
 def _is_portable_build():
-    """portable.flag 파일 존재 여부로 포터블 빌드 감지"""
-    if getattr(sys, 'frozen', False):
-        base = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
-    else:
-        base = Path(__file__).parent.parent.parent
-    return (base / 'portable.flag').exists()
+    """패키징된 포터블 앱만 감지한다. 소스 실행은 시스템 환경을 사용한다."""
+    if not getattr(sys, 'frozen', False):
+        return False
+
+    base = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
+    return (base / 'portable.flag').is_file()
 
 
 def _get_portable_bin_paths():
@@ -40,9 +40,42 @@ def _get_portable_bin_paths():
         return []
 
 
+def _set_system_android_sdk_env(env):
+    """GUI 실행 환경에 Android SDK 경로 변수를 보완한다."""
+    if sys.platform == 'win32':
+        localappdata = env.get('LOCALAPPDATA', '')
+        candidates = [
+            env.get('ANDROID_HOME'),
+            env.get('ANDROID_SDK_ROOT'),
+            os.path.join(localappdata, 'Android', 'Sdk') if localappdata else None,
+        ]
+    elif sys.platform == 'darwin':
+        candidates = [
+            env.get('ANDROID_HOME'),
+            env.get('ANDROID_SDK_ROOT'),
+            str(Path.home() / 'Library' / 'Android' / 'sdk'),
+        ]
+    else:
+        candidates = [
+            env.get('ANDROID_HOME'),
+            env.get('ANDROID_SDK_ROOT'),
+            str(Path.home() / 'Android' / 'Sdk'),
+        ]
+
+    sdk_path = next(
+        (str(Path(candidate).expanduser()) for candidate in candidates
+         if candidate and Path(candidate).expanduser().is_dir()),
+        None,
+    )
+    if sdk_path:
+        env['ANDROID_HOME'] = sdk_path
+        env['ANDROID_SDK_ROOT'] = sdk_path
+
+
 def _get_env_with_full_path():
     """GUI/EXE 실행 시 shell PATH가 누락되는 문제를 보완"""
     env = os.environ.copy()
+    _set_system_android_sdk_env(env)
 
     if sys.platform == 'win32':
         appdata = os.environ.get('APPDATA', '')
@@ -60,7 +93,12 @@ def _get_env_with_full_path():
         ]
         existing = env.get('PATH', '').split(os.pathsep)
         extra = [p for p in common_paths if p and p not in existing]
-        portable_paths = [p for p in _get_portable_bin_paths() if p not in existing]
+        # 시스템 빌드는 설치된 포터블 런타임을 선택하지 않는다.
+        # 포터블 경로가 PATH 앞에 오면 일반 빌드도 포터블 바이너리를 실행한다.
+        portable_paths = [
+            p for p in (_get_portable_bin_paths() if _is_portable_build() else [])
+            if p not in existing
+        ]
         if extra or portable_paths:
             env['PATH'] = os.pathsep.join(portable_paths + extra) + os.pathsep + env.get('PATH', '')
     else:
@@ -88,7 +126,8 @@ def _get_env_with_full_path():
         except Exception:
             pass
 
-        portable_paths = _get_portable_bin_paths()
+        # 포터블 빌드에서만 앱 전용 런타임을 PATH 우선순위에 둔다.
+        portable_paths = _get_portable_bin_paths() if _is_portable_build() else []
         base_path = shell_path or env.get('PATH', '')
         env['PATH'] = ':'.join(portable_paths + common_paths) + ':' + base_path
 

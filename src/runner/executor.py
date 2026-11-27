@@ -183,6 +183,23 @@ def execute_script(
             if log_callback:
                 log_callback(f"🚀 스크립트 시작: {script_filename}")
 
+            if log_callback:
+                log_callback("⏳ Appium 서버와 드라이버 준비를 기다리는 중...")
+            from src.device.adb import wait_for_appium_ready
+            if not wait_for_appium_ready(
+                timeout=300,
+                should_cancel=lambda: script_should_stop,
+            ):
+                if log_callback:
+                    if script_should_stop:
+                        log_callback("⏹️ Appium 준비 중 실행이 취소되었습니다.")
+                    else:
+                        log_callback(
+                            "❌ Appium 서버가 준비되지 않아 스크립트를 실행하지 않았습니다. "
+                            "Appium 실행 상태와 진행 로그를 확인해주세요."
+                        )
+                return
+
             if getattr(sys, 'frozen', False):
                 if log_callback:
                     log_callback("📦 EXE 환경에서 실행합니다. 시스템 Python을 탐색합니다...")

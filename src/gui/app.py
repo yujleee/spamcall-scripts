@@ -374,6 +374,7 @@ def create_gui():
     refresh_scripts()
 
     def on_close():
+        stop_running_script()
         stop_appium_server()
         root.destroy()
 

@@ -1,5 +1,6 @@
 import subprocess
 import os
+import signal
 import shutil
 import sys
 import threading
@@ -199,18 +200,47 @@ def _read_appium_log_tail():
 
 
 def stop_appium_server():
-    """이 앱이 시작한 Appium 서버만 종료"""
+    """이 앱이 시작한 Appium 서버와 같은 프로세스 그룹의 자식들을 종료"""
     global _appium_process, _appium_starting
     with _appium_lock:
         process = _appium_process
         _appium_process = None
         _appium_starting = False
 
-    if not process or process.poll() is not None:
+    if not process:
         return
-    process.terminate()
+
+    if sys.platform == 'win32':
+        if process.poll() is None:
+            subprocess.run(
+                ['taskkill', '/PID', str(process.pid), '/T', '/F'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+                timeout=5,
+            )
+        return
+
+    # Appium이 띄운 xcodebuild/iproxy 같은 자식이 서버 종료 후에도 남으면
+    # WDA의 8100 포트 포워딩이 계속 점유될 수 있다. 별도 세션으로 시작했으므로
+    # 그 프로세스 그룹만 종료해 다른 터미널의 Appium에는 손대지 않는다.
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+
     try:
         process.wait(timeout=5)
     except subprocess.TimeoutExpired:
-        process.kill()
-        process.wait(timeout=2)
+        pass
+
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+    if process.poll() is None:
+        try:
+            process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            pass
